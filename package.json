@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push && prisma db seed && tsx prisma/seed-incremental.ts && tsx prisma/seed-incremental-2.ts && tsx prisma/seed-incremental-3.ts && tsx prisma/seed-incremental-4.ts && tsx prisma/seed-incremental-5.ts && next build",
+    "build": "prisma db push && next build",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
