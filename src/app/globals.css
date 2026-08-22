@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-neutral-50 text-ink font-body;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-serif;
+  }
+}
+
+@layer components {
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm bg-ink px-8 py-3 text-sm uppercase tracking-widest2 text-gold-400 transition-colors hover:bg-gold-400 hover:text-ink;
+  }
+
+  .btn-gold-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm border border-gold-400 px-8 py-3 text-sm uppercase tracking-widest2 text-ink transition-colors hover:bg-gold-400 hover:text-ink;
+  }
+
+  .section-title {
+    @apply text-center text-3xl md:text-4xl font-serif tracking-wide text-ink;
+  }
+
+  .container-page {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Painel administrativo - tema escuro com acentos dourados */
+  .admin-shell {
+    @apply bg-ink text-cream;
+  }
+
+  .admin-sidebar {
+    @apply bg-ink-soft border-r border-gold-400/15;
+  }
+
+  .admin-card {
+    @apply rounded-lg border border-gold-400/15 bg-ink-soft;
+  }
+
+  .admin-title {
+    @apply text-2xl font-semibold text-cream;
+  }
+
+  .admin-subtitle {
+    @apply mt-1 text-sm text-cream/50;
+  }
+
+  .admin-input {
+    @apply rounded-md border border-gold-400/25 bg-ink px-3 py-2 text-sm text-cream placeholder-cream/30 focus:border-gold-400 focus:outline-none;
+  }
+
+  .admin-label {
+    @apply block text-sm font-medium text-cream/70;
+  }
+
+  .admin-btn-primary {
+    @apply rounded-md bg-gold-400 px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-gold-300 disabled:opacity-50;
+  }
+
+  .admin-btn-danger {
+    @apply rounded-md border border-red-500/40 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-50;
+  }
+
+  .admin-link {
+    @apply text-gold-400 hover:underline;
+  }
+
+  .admin-table-wrap {
+    @apply overflow-hidden rounded-lg border border-gold-400/15 bg-ink-soft;
+  }
+
+  .admin-table-th {
+    @apply bg-ink px-4 py-3 text-left text-cream/50;
+  }
+
+  .admin-table-row {
+    @apply border-t border-gold-400/10;
+  }
+}

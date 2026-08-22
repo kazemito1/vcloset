@@ -1,0 +1,214 @@
+// V.CLOSET - Prisma schema
+// Dev: SQLite | Produção: trocar provider para "postgresql" e ajustar DATABASE_URL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  order    Int       @default(0)
+  products Product[]
+}
+
+model Product {
+  id             String           @id @default(cuid())
+  name           String
+  slug           String           @unique
+  description    String
+  material       String
+  priceCents     Int
+  // Preço promocional opcional (em centavos). Quando preenchido e menor que
+  // priceCents, o produto aparece na página /sale com o preço original riscado.
+  salePriceCents Int?
+  // Curadoria por público-alvo, usada pela página /masculino (filtro, não
+  // categoria nova). Valores válidos controlados via Zod: "feminino" | "masculino" | "unissex".
+  targetGender   String           @default("unissex")
+  images         String           // JSON string array (SQLite não suporta String[] nativamente)
+  featured       Boolean          @default(false)
+  categoryId     String
+  category       Category         @relation(fields: [categoryId], references: [id])
+  variants       ProductVariant[]
+  orderItems     OrderItem[]
+  createdAt      DateTime         @default(now())
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  label     String
+  stock     Int     @default(10)
+}
+
+// Observação: SQLite não suporta `enum` nativamente no Prisma.
+// Os valores válidos são controlados via Zod no backend (ver src/types e src/lib):
+// OrderStatus: "PENDING" | "PAID" | "FAILED" | "CANCELED"
+// PaymentMethod: "CREDIT_CARD" | "PIX"
+// Ao migrar para PostgreSQL em produção, é possível voltar a usar `enum` nativo do Prisma.
+
+model Order {
+  id                    String   @id @default(cuid())
+  customerName          String
+  customerEmail         String
+  customerPhone         String?
+  customerCpf           String?
+  shippingAddress       String   // JSON string
+  totalCents            Int
+  discountCents         Int      @default(0)
+  couponCode            String?
+  referralCode          String?
+  status                String   @default("PENDING")
+  paymentMethod         String
+  paymentRef            String?
+  pixQrCode             String?
+  pixQrCodeBase64       String?
+  // Crédito virtual de indicação: valor de crédito (em centavos) usado como desconto
+  // neste pedido, e flag de idempotência para não conceder o crédito ao indicador
+  // mais de uma vez (o webhook de pagamento pode ser reenviado pelo provedor).
+  creditUsedCents       Int      @default(0)
+  referralCreditGranted Boolean  @default(false)
+  items                 OrderItem[]
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+}
+
+// Cupom de desconto. Pode ser criado manualmente pelo lojista em /admin/cupons
+// ou gerado automaticamente como recompensa do programa de Indique e Ganhe
+// (nesse caso sourceReferralId/sourceOrderId ficam preenchidos).
+model Coupon {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  type               String    // "PERCENT" | "FIXED"
+  value              Int       // percentual (1-100) se PERCENT, ou centavos se FIXED
+  active             Boolean   @default(true)
+  expiresAt          DateTime?
+  maxUses            Int?
+  usedCount          Int       @default(0)
+  minOrderValueCents Int?
+  sourceReferralId   String?
+  sourceOrderId      String?
+  createdAt          DateTime  @default(now())
+}
+
+// Programa de Indique e Ganhe. O lojista cadastra o indicador (nome/email) e
+// recebe um código único para repassar a ele. Quando um cliente indicado usa
+// o código no checkout, o pedido dele recebe desconto (referredDiscount*) e,
+// ao concluir o pedido, um Coupon de recompensa é gerado automaticamente
+// para o indicador (rewardType/rewardValue).
+model Referral {
+  id                    String   @id @default(cuid())
+  code                  String   @unique
+  referrerName          String
+  referrerEmail         String
+  active                Boolean  @default(true)
+  referredDiscountType  String   @default("PERCENT")
+  referredDiscountValue Int      @default(10)
+  rewardType            String   @default("FIXED")
+  rewardValue           Int      @default(2000)
+  usedCount             Int      @default(0)
+  createdAt             DateTime @default(now())
+}
+
+model OrderItem {
+  id             String  @id @default(cuid())
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id])
+  productId      String
+  product        Product @relation(fields: [productId], references: [id])
+  variantLabel   String?
+  productName    String
+  quantity       Int
+  unitPriceCents Int
+}
+
+// Usuários do painel admin. Substitui gradualmente a senha única (ADMIN_PASSWORD):
+// quando não há AdminUser cadastrado, ou o login usa a senha do env diretamente,
+// a sessão é tratada como SUPER_ADMIN (compatibilidade retroativa).
+// role: "SUPER_ADMIN" | "OPERADOR"
+model AdminUser {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("OPERADOR")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Configurações gerais da loja, editáveis em /admin/configuracoes (SUPER_ADMIN).
+// Linha única (id fixo "default"). O site público lê daqui em vez de constantes fixas.
+model StoreSettings {
+  id                  String   @id @default("default")
+  storeName           String   @default("V.CLOSET")
+  storeSlogan         String?
+  freeShippingCents   Int      @default(29900)
+  whatsappNumber      String   @default("")
+  instagramUrl        String?
+  facebookUrl         String?
+  tiktokUrl           String?
+  // Valor único e global (em centavos) de crédito virtual concedido ao indicador
+  // quando um pedido feito com o código dele é confirmado (status PAID).
+  referralCreditCents Int      @default(1000)
+  updatedAt           DateTime @updatedAt
+}
+
+// Histórico de ações relevantes no admin (quem fez, o que fez, quando).
+// adminUserId fica null quando a ação foi feita via login de senha única (fallback).
+model ActivityLog {
+  id          String   @id @default(cuid())
+  adminUserId String?
+  adminName   String
+  adminRole   String?
+  action      String
+  entityType  String?
+  entityId    String?
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+// Despesas manuais para o controle financeiro simples em /admin/financeiro.
+model Expense {
+  id          String   @id @default(cuid())
+  description String
+  amountCents Int
+  category    String
+  date        DateTime
+  createdAt   DateTime @default(now())
+}
+
+// Saldo de crédito virtual do programa "Indique e Ganhe", por indicador
+// (chave: e-mail do indicador — Referral.referrerEmail). Alimentado quando um
+// pedido feito com o código do indicador é confirmado (status PAID), com valor
+// único e global configurado em StoreSettings.referralCreditCents.
+model CustomerCredit {
+  id            String   @id @default(cuid())
+  customerEmail String   @unique
+  balanceCents  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  transactions CreditTransaction[]
+}
+
+// Histórico de movimentações do crédito virtual, para auditoria simples em
+// /admin/creditos. type: "GANHO_POR_INDICACAO" | "USADO_EM_COMPRA" | "AJUSTE_MANUAL".
+// amountCents é sempre o efeito líquido na transação (positivo soma, negativo subtrai).
+model CreditTransaction {
+  id          String         @id @default(cuid())
+  creditId    String
+  credit      CustomerCredit @relation(fields: [creditId], references: [id])
+  type        String
+  amountCents Int
+  orderId     String?
+  description String?
+  createdAt   DateTime       @default(now())
+}
