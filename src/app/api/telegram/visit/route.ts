@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    notifyNewVisit({
+    await notifyNewVisit({
       path: typeof body.path === "string" ? body.path : "/",
       referer: typeof body.referer === "string" ? body.referer : "",
       userAgent: typeof body.userAgent === "string" ? body.userAgent : "",
