@@ -3,11 +3,30 @@ import { prisma } from "@/lib/prisma";
 import { createOrderSchema } from "@/lib/validation";
 import { resolveAppliedCode, generateRewardCouponCode } from "@/lib/coupons";
 import { applyCreditToOrder } from "@/lib/credits";
-
+import { notifyNewOrder } from "@/lib/telegram";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const parsed = createOrderSchema.safeParse(body);
+    });
+
+    notifyNewOrder({
+      id: order.id,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      totalCents: order.totalCents,
+      paymentMethod: order.paymentMethod,
+      items: order.items.map((item) => ({
+        productName: item.productName,
+        variantLabel: item.variantLabel,
+        quantity: item.quantity,
+        unitPriceCents: item.unitPriceCents,
+      })),
+    });
+
+    return NextResponse.json(
+      {
+        id: order.id,
 
     if (!parsed.success) {
       return NextResponse.json(
