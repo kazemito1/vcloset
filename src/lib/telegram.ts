@@ -85,13 +85,62 @@ export function notifyNewOrder(order: {
   sendTelegramMessage(lines.join("\n"));
 }
 
-export function notifyNewVisit(info: { path: string; referer: string }): void {
+function formatVisitTime(date: Date = new Date()): string {
+  return date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+}
+
+function parseUserAgent(ua: string) {
+  const source = (ua || "").toLowerCase();
+
+  const isTablet =
+    /ipad|tablet|kindle|silk/.test(source) ||
+    (source.includes("android") && !source.includes("mobi"));
+  const isMobile = /mobi|android|iphone|ipod/.test(source);
+  const device = isTablet ? "Tablet" : isMobile ? "Celular" : "Desktop";
+
+  let browser = "Navegador";
+  if (/edg\//.test(source)) browser = "Edge";
+  else if (/opr\//.test(source) || source.includes("opera")) browser = "Opera";
+  else if (/crios/.test(source) || /chrome/.test(source)) browser = "Chrome";
+  else if (/firefox|fxios/.test(source)) browser = "Firefox";
+  else if (/safari/.test(source)) browser = "Safari";
+  else if (/msie|trident/.test(source)) browser = "Internet Explorer";
+
+  let os = "Sistema";
+  if (/windows/.test(source)) os = "Windows";
+  else if (/android/.test(source)) os = "Android";
+  else if (/iphone|ipad|ipod/.test(source)) os = "iOS";
+  else if (/mac os x|macintosh/.test(source)) os = "macOS";
+  else if (/linux/.test(source)) os = "Linux";
+
+  return { device, browser, os };
+}
+
+export function notifyNewVisit(info: {
+  path: string;
+  referer: string;
+  userAgent: string;
+  lang: string;
+  timezone: string;
+  screen: string;
+  first: boolean;
+}): void {
+  const { device, browser, os } = parseUserAgent(info.userAgent);
+
   const lines = [
-    "👀 <b>Novo acesso ao site</b>",
+    info.first ? "👀 <b>Novo acesso ao site</b>" : "🔍 <b>Navegação no site</b>",
     "",
+    `<b>Horário:</b> ${formatVisitTime()}`,
     `<b>Página:</b> ${escapeHtml(info.path || "/")}`,
     `<b>Origem:</b> ${escapeHtml(info.referer || "direta")}`,
+    `<b>Dispositivo:</b> ${escapeHtml(device)}`,
+    `<b>Navegador:</b> ${escapeHtml(browser)}`,
+    `<b>Sistema:</b> ${escapeHtml(os)}`,
   ];
+
+  if (info.screen) lines.push(`<b>Tela:</b> ${escapeHtml(info.screen)}`);
+  if (info.lang) lines.push(`<b>Idioma:</b> ${escapeHtml(info.lang)}`);
+  if (info.timezone) lines.push(`<b>Fuso:</b> ${escapeHtml(info.timezone)}`);
 
   sendTelegramMessage(lines.join("\n"));
 }
