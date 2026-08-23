@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
       return created;
     });
 
-    notifyNewOrder({
+    await notifyNewOrder({
       id: order.id,
       customerName: order.customerName,
       customerEmail: order.customerEmail,
