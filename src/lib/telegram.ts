@@ -50,7 +50,7 @@ function formatCents(cents: number): string {
   });
 }
 
-export function notifyNewOrder(order: {
+export async function notifyNewOrder(order: {
   id: string;
   customerName: string;
   customerEmail: string;
@@ -62,7 +62,7 @@ export function notifyNewOrder(order: {
     quantity: number;
     unitPriceCents: number;
   }[];
-}): void {
+}): Promise<void> {
   const paymentLabel =
     order.paymentMethod === "CREDIT_CARD" ? "Cartão de crédito" : order.paymentMethod;
 
@@ -82,7 +82,7 @@ export function notifyNewOrder(order: {
     }),
   ];
 
-  sendTelegramMessage(lines.join("\n"));
+  await sendTelegramMessage(lines.join("\n"));
 }
 
 function formatVisitTime(date: Date = new Date()): string {
@@ -116,7 +116,7 @@ function parseUserAgent(ua: string) {
   return { device, browser, os };
 }
 
-export function notifyNewVisit(info: {
+export async function notifyNewVisit(info: {
   path: string;
   referer: string;
   userAgent: string;
@@ -124,7 +124,7 @@ export function notifyNewVisit(info: {
   timezone: string;
   screen: string;
   first: boolean;
-}): void {
+}): Promise<void> {
   const { device, browser, os } = parseUserAgent(info.userAgent);
 
   const lines = [
@@ -142,5 +142,5 @@ export function notifyNewVisit(info: {
   if (info.lang) lines.push(`<b>Idioma:</b> ${escapeHtml(info.lang)}`);
   if (info.timezone) lines.push(`<b>Fuso:</b> ${escapeHtml(info.timezone)}`);
 
-  sendTelegramMessage(lines.join("\n"));
+  await sendTelegramMessage(lines.join("\n"));
 }
