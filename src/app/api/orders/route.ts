@@ -4,29 +4,11 @@ import { createOrderSchema } from "@/lib/validation";
 import { resolveAppliedCode, generateRewardCouponCode } from "@/lib/coupons";
 import { applyCreditToOrder } from "@/lib/credits";
 import { notifyNewOrder } from "@/lib/telegram";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const parsed = createOrderSchema.safeParse(body);
-    });
-
-    notifyNewOrder({
-      id: order.id,
-      customerName: order.customerName,
-      customerEmail: order.customerEmail,
-      totalCents: order.totalCents,
-      paymentMethod: order.paymentMethod,
-      items: order.items.map((item) => ({
-        productName: item.productName,
-        variantLabel: item.variantLabel,
-        quantity: item.quantity,
-        unitPriceCents: item.unitPriceCents,
-      })),
-    });
-
-    return NextResponse.json(
-      {
-        id: order.id,
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -56,8 +38,6 @@ export async function POST(req: NextRequest) {
     let appliedCouponId: string | null = null;
     let appliedReferralId: string | null = null;
 
-    // Revalida o código de cupom/indicação sempre no servidor: nunca confia
-    // no valor de desconto vindo do client.
     if (appliedCode && appliedCode.trim()) {
       const resolved = await resolveAppliedCode(appliedCode, subtotalCents);
       if (!resolved.valid) {
@@ -75,9 +55,6 @@ export async function POST(req: NextRequest) {
 
     const totalAfterDiscountCents = Math.max(0, subtotalCents - discountCents);
 
-    // Crédito virtual: aplicado sobre o e-mail informado (do próprio cliente,
-    // usado como identificador de saldo). Nunca confia em valor vindo do client:
-    // o valor efetivamente usado é calculado no servidor a partir do saldo real.
     const creditEmail = useCredit ? (creditCustomerEmail || customerEmail) : null;
 
     const order = await prisma.$transaction(async (tx) => {
@@ -107,9 +84,6 @@ export async function POST(req: NextRequest) {
         include: { items: true },
       });
 
-      // Crédito virtual: aplicado sobre o e-mail informado (do próprio cliente,
-      // usado como identificador de saldo). Nunca confia em valor vindo do client:
-      // o valor efetivamente usado é calculado no servidor a partir do saldo real.
       let creditUsedCents = 0;
       if (creditEmail) {
         creditUsedCents = await applyCreditToOrder(tx, {
@@ -143,7 +117,6 @@ export async function POST(req: NextRequest) {
           data: { usedCount: { increment: 1 } },
         });
 
-        // Gera automaticamente o cupom-recompensa para quem indicou.
         await tx.coupon.create({
           data: {
             code: generateRewardCouponCode(referral.referrerName),
@@ -157,6 +130,20 @@ export async function POST(req: NextRequest) {
       }
 
       return created;
+    });
+
+    notifyNewOrder({
+      id: order.id,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      totalCents: order.totalCents,
+      paymentMethod: order.paymentMethod,
+      items: order.items.map((item) => ({
+        productName: item.productName,
+        variantLabel: item.variantLabel,
+        quantity: item.quantity,
+        unitPriceCents: item.unitPriceCents,
+      })),
     });
 
     return NextResponse.json(
