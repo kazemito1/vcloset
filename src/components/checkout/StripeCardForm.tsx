@@ -1,103 +1,129 @@
 "use client";
 
-import { loadStripe } from "@stripe/stripe-js";
-import {
-  Elements,
-  CardElement,
-  useStripe,
-  useElements,
-} from "@stripe/react-stripe-js";
-import { useMemo, useState } from "react";
-
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
-);
-
-const cardElementOptions = {
-  style: {
-    base: {
-      fontSize: "16px",
-      color: "#0A0A0A",
-      fontFamily: "'Inter', sans-serif",
-      "::placeholder": { color: "#0A0A0A66" },
-    },
-    invalid: { color: "#B00020" },
-  },
-};
+import { useState } from "react";
 
 interface StripeCardFormProps {
   orderId: string;
   onSuccess: () => void;
 }
 
-function CardForm({ orderId, onSuccess }: StripeCardFormProps) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [loading, setLoading] = useState(false);
+function onlyDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+export function StripeCardForm({ onSuccess }: StripeCardFormProps) {
+  const [cardName, setCardName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!stripe || !elements) return;
+  function handleNumberChange(value: string) {
+    const digits = onlyDigits(value).slice(0, 16);
+    const groups = digits.match(/.{1,4}/g) || [];
+    setCardNumber(groups.join(" "));
+  }
 
-    setLoading(true);
+  function handleExpiryChange(value: string) {
+    const digits = onlyDigits(value).slice(0, 4);
+    if (digits.length <= 2) {
+      setCardExpiry(digits);
+    } else {
+      setCardExpiry(`${digits.slice(0, 2)}/${digits.slice(2)}`);
+    }
+  }
+
+  function handleCvvChange(value: string) {
+    setCardCvv(onlyDigits(value).slice(0, 4));
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setError(null);
 
-    try {
-      const res = await fetch("/api/payments/stripe/create-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Erro ao iniciar pagamento");
-      }
-
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) throw new Error("Elemento do cartão não encontrado");
-
-      const result = await stripe.confirmCardPayment(data.clientSecret, {
-        payment_method: { card: cardElement },
-      });
-
-      if (result.error) {
-        setError(result.error.message || "Pagamento não autorizado");
-      } else if (result.paymentIntent?.status === "succeeded") {
-        onSuccess();
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro inesperado");
-    } finally {
-      setLoading(false);
+    if (cardName.trim().length < 3) {
+      setError("Informe o nome impresso no cartão.");
+      return;
     }
+    if (onlyDigits(cardNumber).length !== 16) {
+      setError("Informe os 16 dígitos do cartão.");
+      return;
+    }
+    if (cardExpiry.length !== 5) {
+      setError("Informe a validade no formato MM/AA.");
+      return;
+    }
+    if (cardCvv.length < 3) {
+      setError("Informe o CVV.");
+      return;
+    }
+
+    onSuccess();
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="border border-gold-400/40 bg-white px-4 py-4">
-        <CardElement options={cardElementOptions} />
+      <div className="space-y-3">
+        <label className="block">
+          <span className="mb-1 block text-sm text-ink/70">Nome impresso no cartão</span>
+          <input
+            type="text"
+            value={cardName}
+            onChange={(e) => setCardName(e.target.value)}
+            placeholder="Como está no cartão"
+            className="w-full border border-gold-400/40 bg-white px-4 py-3 text-ink outline-none focus:border-ink"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1 block text-sm text-ink/70">Número do cartão</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={cardNumber}
+            onChange={(e) => handleNumberChange(e.target.value)}
+            placeholder="0000 0000 0000 0000"
+            className="w-full border border-gold-400/40 bg-white px-4 py-3 text-ink outline-none focus:border-ink"
+          />
+        </label>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="mb-1 block text-sm text-ink/70">Validade</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={cardExpiry}
+              onChange={(e) => handleExpiryChange(e.target.value)}
+              placeholder="MM/AA"
+              className="w-full border border-gold-400/40 bg-white px-4 py-3 text-ink outline-none focus:border-ink"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-sm text-ink/70">CVV</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={cardCvv}
+              onChange={(e) => handleCvvChange(e.target.value)}
+              placeholder="123"
+              className="w-full border border-gold-400/40 bg-white px-4 py-3 text-ink outline-none focus:border-ink"
+            />
+          </label>
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <p className="text-xs text-ink/50">
-        Modo teste: use o cartão 4242 4242 4242 4242, validade futura qualquer e CVC qualquer.
+        Pagamento por confirmação: os dados do cartão não são processados nem armazenados.
+        Seu pedido será confirmado pela loja.
       </p>
 
-      <button type="submit" disabled={!stripe || loading} className="btn-gold w-full disabled:opacity-50">
-        {loading ? "Processando..." : "Pagar com cartão"}
+      <button type="submit" className="btn-gold w-full">
+        Finalizar pedido
       </button>
     </form>
-  );
-}
-
-export function StripeCardForm(props: StripeCardFormProps) {
-  const options = useMemo(() => ({ locale: "pt-BR" as const }), []);
-  return (
-    <Elements stripe={stripePromise} options={options}>
-      <CardForm {...props} />
-    </Elements>
   );
 }
