@@ -238,6 +238,7 @@ model Lead {
   subtotalCents Int
   discountCents Int      @default(0)
   totalCents    Int
+  paidEmailSentAt     DateTime?
   shippingEmailSentAt DateTime?
   createdAt     DateTime @default(now())
 }

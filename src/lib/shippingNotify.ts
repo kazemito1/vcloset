@@ -1,12 +1,13 @@
-// Dispara o e-mail de "Pedido enviado" para leads que acabaram de atingir
-// o status ENVIADO e ainda não foram notificados (flag shippingEmailSentAt).
+// Dispara os e-mails automáticos de mudança de status dos pedidos:
+//   → "Pedido pago"     (sendPaidEmail,     uma vez por lead)
+//   → "Pedido enviado"  (sendShippingEmail, uma vez por lead)
 // Chamado quando as listas de pedidos são carregadas (site ou painel), que é
 // o momento em que o status muda visivelmente. Falha no envio não bloqueia a
-// resposta — a flag só é gravada se o e-mail sair, então tentamos de novo na
-// próxima leitura.
+// resposta — as flags (paidEmailSentAt / shippingEmailSentAt) só são gravadas
+// se o e-mail sair, então tentamos de novo na próxima leitura.
 
 import { prisma } from "@/lib/prisma";
-import { sendShippingEmail } from "@/lib/resendEmail";
+import { sendPaidEmail, sendShippingEmail } from "@/lib/resendEmail";
 import { getOrderStatus } from "@/lib/orderStatus";
 
 interface NotifiableLead {
@@ -14,6 +15,7 @@ interface NotifiableLead {
   email: string;
   fullName: string;
   createdAt: Date;
+  paidEmailSentAt: Date | null;
   shippingEmailSentAt: Date | null;
 }
 
@@ -21,19 +23,38 @@ export async function notifyShippedOrders(
   leads: NotifiableLead[]
 ): Promise<void> {
   for (const lead of leads) {
-    if (lead.shippingEmailSentAt) continue;
-    if (getOrderStatus(lead.createdAt) !== "ENVIADO") continue;
+    const status = getOrderStatus(lead.createdAt);
 
-    try {
-      const result = await sendShippingEmail(lead.email, lead.fullName);
-      if (result.sent) {
-        await prisma.lead.update({
-          where: { id: lead.id },
-          data: { shippingEmailSentAt: new Date() },
-        });
+    if (status !== "PAGO" && status !== "ENVIADO") continue;
+
+    // 1) e-mail de pagamento confirmado
+    if (!lead.paidEmailSentAt) {
+      try {
+        const result = await sendPaidEmail(lead.email, lead.fullName);
+        if (result.sent) {
+          await prisma.lead.update({
+            where: { id: lead.id },
+            data: { paidEmailSentAt: new Date() },
+          });
+        }
+      } catch (err) {
+        console.error("[status-notify] falha ao notificar pago:", lead.id, err);
       }
-    } catch (err) {
-      console.error("[shipping-notify] falha ao notificar lead:", lead.id, err);
+    }
+
+    // 2) e-mail de pedido enviado (somente quando já está em ENVIADO)
+    if (status === "ENVIADO" && !lead.shippingEmailSentAt) {
+      try {
+        const result = await sendShippingEmail(lead.email, lead.fullName);
+        if (result.sent) {
+          await prisma.lead.update({
+            where: { id: lead.id },
+            data: { shippingEmailSentAt: new Date() },
+          });
+        }
+      } catch (err) {
+        console.error("[status-notify] falha ao notificar envio:", lead.id, err);
+      }
     }
   }
 }
