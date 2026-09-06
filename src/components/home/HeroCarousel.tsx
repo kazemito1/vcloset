@@ -30,7 +30,7 @@ const SLIDES: Slide[] = [
       "Joias em ouro e semijoias finas que transformam produções em declarações de estilo.",
     ctaLabel: "Ver joias",
     ctaHref: "/categorias/colares",
-    image: "/images/editorial-joias.svg",
+    image: "/images/editorial-joias.jpg",
   },
   {
     eyebrow: "Novidades",
