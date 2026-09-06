@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCustomerSession } from "@/lib/customerAuth";
+import { getOrderStatus } from "@/lib/orderStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
     customer,
     orders: leads.map((lead) => ({
       ...lead,
-      status: "AGUARDANDO_PAGAMENTO" as const,
+      status: getOrderStatus(lead.createdAt),
     })),
   });
 }

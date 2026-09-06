@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
+import { getOrderStatus } from "@/lib/orderStatus";
 
 interface LeadItem {
   productName: string;
@@ -496,8 +497,16 @@ export default function LeadsPanelPage() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <span className="inline-block rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 text-amber-300">
-                            Aguardando pagamento
+                          <span
+                            className={`inline-block rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 ${
+                              getOrderStatus(lead.createdAt) === "PAGO"
+                                ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
+                                : "border-amber-400/40 bg-amber-400/10 text-amber-300"
+                            }`}
+                          >
+                            {getOrderStatus(lead.createdAt) === "PAGO"
+                              ? "Pedido pago"
+                              : "Aguardando pagamento"}
                           </span>
                           <p className="mt-1.5 text-sm font-bold text-gold-400">
                             {formatBRL(lead.totalCents)}

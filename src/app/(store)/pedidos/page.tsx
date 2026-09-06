@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ORDER_STATUS_LABEL, type OrderStatus } from "@/lib/orderStatus";
 
 interface OrderItem {
   productName: string;
@@ -18,7 +19,7 @@ interface Order {
   discountCents: number;
   totalCents: number;
   installments: string;
-  status: "AGUARDANDO_PAGAMENTO";
+  status: OrderStatus;
 }
 
 function formatBRL(cents: number): string {
@@ -159,8 +160,14 @@ export default function PedidosPage() {
                             {new Date(order.createdAt).toLocaleString("pt-BR")}
                           </p>
                         </div>
-                        <span className="inline-block rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 text-amber-300">
-                          Aguardando confirmação de pagamento
+                        <span
+                          className={`inline-block rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 ${
+                            order.status === "PAGO"
+                              ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
+                              : "border-amber-400/40 bg-amber-400/10 text-amber-300"
+                          }`}
+                        >
+                          {ORDER_STATUS_LABEL[order.status]}
                         </span>
                       </div>
 
