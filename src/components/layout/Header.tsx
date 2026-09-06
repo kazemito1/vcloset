@@ -70,7 +70,7 @@ export function Header({ settings }: HeaderProps) {
 
         <form
           onSubmit={handleCepSubmit}
-          className="absolute left-0 hidden items-center gap-2 xl:flex"
+          className="absolute -left-7 hidden items-center gap-2 xl:flex"
         >
           <label className="sr-only" htmlFor="header-cep">
             Informe seu CEP
@@ -191,11 +191,21 @@ export function Header({ settings }: HeaderProps) {
           </Link>
           <Link
             href="/conta"
-            className={`text-sm uppercase tracking-wide transition-colors hover:text-gold-600 ${
+            aria-label="Minha Conta"
+            className={`flex items-center justify-center text-ink transition-colors hover:text-gold-600 ${
               pathname === "/conta" ? "text-gold-600" : "text-ink"
             }`}
           >
-            Minha Conta
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="7" r="4.5" strokeWidth="1.3" />
+              <path
+                d="M4 21v-3.25A5.75 5.75 0 019.75 12h4.5A5.75 5.75 0 0120 17.75V21"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="sr-only">Minha Conta</span>
           </Link>
         </nav>
 
@@ -295,9 +305,19 @@ export function Header({ settings }: HeaderProps) {
           <Link
             href="/conta"
             onClick={() => setMenuOpen(false)}
-            className="py-2 text-sm uppercase tracking-wide text-ink"
+            aria-label="Minha Conta"
+            className="flex w-fit items-center py-2 text-ink transition-colors hover:text-gold-600"
           >
-            Minha Conta
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="7" r="4.5" strokeWidth="1.3" />
+              <path
+                d="M4 21v-3.25A5.75 5.75 0 019.75 12h4.5A5.75 5.75 0 0120 17.75V21"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="sr-only">Minha Conta</span>
           </Link>
         </nav>
       )}
