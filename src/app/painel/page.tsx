@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 
 interface LeadItem {
@@ -54,6 +54,20 @@ export default function LeadsPanelPage() {
   const [loggingIn, setLoggingIn] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loadingLeads, setLoadingLeads] = useState(false);
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
+
+  const filteredLeads = useMemo(() => {
+    if (!filterFrom && !filterTo) return leads;
+    const from = filterFrom ? new Date(`${filterFrom}T00:00:00`).getTime() : null;
+    const to = filterTo ? new Date(`${filterTo}T23:59:59.999`).getTime() : null;
+    return leads.filter((lead) => {
+      const t = new Date(lead.createdAt).getTime();
+      if (from !== null && t < from) return false;
+      if (to !== null && t > to) return false;
+      return true;
+    });
+  }, [leads, filterFrom, filterTo]);
 
   const loadLeads = useCallback(async () => {
     setLoadingLeads(true);
@@ -216,7 +230,11 @@ export default function LeadsPanelPage() {
               ADMINISTRAÇÃO V-CLOSET
             </h1>
             <p className="mt-2 text-xs uppercase tracking-widest2 text-cream/50">
-              Painel de Leads · {leads.length} lead{leads.length === 1 ? "" : "s"}
+              Painel de Leads · {filteredLeads.length} lead
+              {filteredLeads.length === 1 ? "" : "s"}
+              {filteredLeads.length !== leads.length
+                ? ` (de ${leads.length} no total)`
+                : ""}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -243,13 +261,61 @@ export default function LeadsPanelPage() {
           </div>
         </div>
 
+        <div className="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-gold-400/15 bg-ink-soft px-5 py-4">
+          <div>
+            <label
+              htmlFor="filter-from"
+              className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40"
+            >
+              De
+            </label>
+            <input
+              id="filter-from"
+              type="date"
+              value={filterFrom}
+              onChange={(e) => setFilterFrom(e.target.value)}
+              className="mt-1 rounded border border-gold-400/20 bg-ink px-3 py-2 text-sm text-cream outline-none transition focus:border-gold-400/60"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="filter-to"
+              className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40"
+            >
+              Até
+            </label>
+            <input
+              id="filter-to"
+              type="date"
+              value={filterTo}
+              onChange={(e) => setFilterTo(e.target.value)}
+              className="mt-1 rounded border border-gold-400/20 bg-ink px-3 py-2 text-sm text-cream outline-none transition focus:border-gold-400/60"
+            />
+          </div>
+          {(filterFrom || filterTo) && (
+            <button
+              onClick={() => {
+                setFilterFrom("");
+                setFilterTo("");
+              }}
+              className="rounded border border-cream/20 px-4 py-2 text-[10px] font-bold uppercase tracking-widest2 text-cream/60 transition hover:border-cream/40"
+            >
+              Limpar filtro
+            </button>
+          )}
+        </div>
+
         {leads.length === 0 ? (
           <p className="mt-16 text-center text-sm text-cream/50">
             Nenhum lead enviado ainda.
           </p>
+        ) : filteredLeads.length === 0 ? (
+          <p className="mt-16 text-center text-sm text-cream/50">
+            Nenhum lead no período selecionado.
+          </p>
         ) : (
           <div className="mt-8 space-y-4">
-            {leads.map((lead) => {
+            {filteredLeads.map((lead) => {
               let items: LeadItem[] = [];
               try {
                 items = JSON.parse(lead.itemsJson) as LeadItem[];
