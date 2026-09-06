@@ -64,7 +64,7 @@ function getBadges(freeShippingCents?: number) {
 export function TrustBadges({ freeShippingCents }: { freeShippingCents?: number }) {
   const badges = getBadges(freeShippingCents);
   return (
-    <section className="border-y border-gold-400/20 bg-white py-12">
+    <section className="border-y border-gold-400/20 bg-cream py-12">
       <div className="container-page grid grid-cols-2 gap-8 md:grid-cols-4">
         {badges.map((badge) => (
           <div key={badge.label} className="flex flex-col items-center gap-3 text-center">

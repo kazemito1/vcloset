@@ -10,9 +10,18 @@ interface ProductCardProps {
   priceCents: number;
   salePriceCents?: number | null;
   image: string;
+  hoverImage?: string;
 }
 
-export function ProductCard({ slug, name, material, priceCents, salePriceCents, image }: ProductCardProps) {
+export function ProductCard({
+  slug,
+  name,
+  material,
+  priceCents,
+  salePriceCents,
+  image,
+  hoverImage,
+}: ProductCardProps) {
   const hasDiscount = typeof salePriceCents === "number" && salePriceCents > 0 && salePriceCents < priceCents;
   const discountPercent = hasDiscount
     ? Math.round(((priceCents - salePriceCents!) / priceCents) * 100)
@@ -20,7 +29,7 @@ export function ProductCard({ slug, name, material, priceCents, salePriceCents, 
 
   return (
     <Link href={`/produto/${slug}`} className="group block">
-      <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-neutral-50">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-neutral-100">
         {hasDiscount && (
           <span className="absolute left-2 top-2 z-10 rounded-sm bg-gold-500 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-ink">
             {discountPercent}% Off
@@ -33,6 +42,15 @@ export function ProductCard({ slug, name, material, priceCents, salePriceCents, 
           className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 50vw, 25vw"
         />
+        {hoverImage && (
+          <Image
+            src={hoverImage}
+            alt={`${name} — vista alternativa`}
+            fill
+            className="object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+            sizes="(max-width: 768px) 50vw, 25vw"
+          />
+        )}
       </div>
       <div className="mt-4 text-center">
         <p className="text-xs uppercase tracking-wide text-gold-600">{material}</p>

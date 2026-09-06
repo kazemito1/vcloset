@@ -5,6 +5,7 @@
 @layer base {
   body {
     @apply bg-neutral-50 text-ink font-body;
+    background-image: radial-gradient(circle at top, rgba(201, 169, 97, 0.06), transparent 34rem);
   }
 
   h1, h2, h3, h4 {
@@ -18,7 +19,7 @@
   }
 
   .btn-gold-outline {
-    @apply inline-flex items-center justify-center gap-2 rounded-sm border border-gold-400 px-8 py-3 text-sm uppercase tracking-widest2 text-ink transition-colors hover:bg-gold-400 hover:text-ink;
+    @apply inline-flex items-center justify-center gap-2 rounded-sm border border-gold-600 px-8 py-3 text-sm uppercase tracking-widest2 text-ink transition-colors hover:bg-gold-400 hover:text-ink;
   }
 
   .section-title {

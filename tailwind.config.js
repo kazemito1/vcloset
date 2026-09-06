@@ -8,8 +8,8 @@ module.exports = {
     extend: {
       colors: {
         gold: {
-          50: "#FBF7EE",
-          100: "#F5EBD1",
+          50: "#F8F1E5",
+          100: "#F1E4C8",
           200: "#EAD8A3",
           300: "#DEC275",
           400: "#D4AF37",
@@ -20,17 +20,17 @@ module.exports = {
           900: "#4A3A18",
         },
         ink: {
-          DEFAULT: "#0A0A0A",
-          soft: "#1A1A1A",
+          DEFAULT: "#171411",
+          soft: "#241F1A",
         },
-        cream: "#FAF7F2",
+        cream: "#F3EEE5",
         neutral: {
-          50: "#FAFAFA",
-          100: "#F4F4F4",
-          200: "#E3E6E8",
-          300: "#C7CCD1",
-          400: "#9099A2",
-          500: "#74808B",
+          50: "#EEE8DE",
+          100: "#E5DED3",
+          200: "#D5CCC0",
+          300: "#B8ADA0",
+          400: "#8E8377",
+          500: "#6E645A",
         },
       },
       fontFamily: {

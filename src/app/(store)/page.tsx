@@ -50,7 +50,7 @@ export default async function HomePage() {
 
       {/* Produtos em destaque */}
       {products.length > 0 && (
-        <section className="bg-white py-16 md:py-24">
+        <section className="bg-cream py-16 md:py-24">
           <div className="container-page">
             <h2 className="section-title">Destaques</h2>
             <p className="mx-auto mt-4 max-w-xl text-center text-ink/60">
@@ -66,6 +66,7 @@ export default async function HomePage() {
                   priceCents={p.priceCents}
                   salePriceCents={p.salePriceCents}
                   image={p.images[0]}
+                  hoverImage={p.images[1]}
                 />
               ))}
             </div>
@@ -100,6 +101,7 @@ export default async function HomePage() {
                 priceCents={p.priceCents}
                 salePriceCents={p.salePriceCents}
                 image={p.images[0]}
+                hoverImage={p.images[1]}
               />
             ))}
           </div>
@@ -107,7 +109,7 @@ export default async function HomePage() {
       ))}
 
       {/* Institucional */}
-      <section className="bg-white py-16 md:py-24 text-center">
+      <section className="bg-cream py-16 md:py-24 text-center">
         <div className="container-page">
           <h2 className="section-title">Excelência em cada detalhe</h2>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-ink/70">

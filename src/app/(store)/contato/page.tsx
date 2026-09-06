@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const inputClass =
-  "w-full border border-gold-400/40 bg-white px-4 py-3 text-sm text-ink placeholder:text-ink/40 focus:border-gold-400 focus:outline-none";
+  "w-full border border-gold-400/40 bg-neutral-50 px-4 py-3 text-sm text-ink placeholder:text-ink/40 focus:border-gold-400 focus:outline-none";
 
 export default function ContactPage() {
   const [sent, setSent] = useState(false);

@@ -45,7 +45,7 @@ export function Header({ settings }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-gold-400/20 bg-cream/95 backdrop-blur">
       <div className="bg-ink py-2 text-center text-xs uppercase tracking-wide text-gold-400">
         Frete grátis para todo o Brasil em compras acima de {freeShippingLabel}
       </div>
@@ -56,7 +56,7 @@ export function Header({ settings }: HeaderProps) {
           </span>
         </Link>
       </div>
-      <div className="border-t border-neutral-100">
+      <div className="border-t border-gold-400/15">
         <div className="container-page relative flex min-h-[58px] items-center justify-center py-3">
         <button
           className="absolute left-0 text-ink xl:hidden"
@@ -145,7 +145,7 @@ export function Header({ settings }: HeaderProps) {
 
                 {openGroup === group.label && (
                   <div className="absolute left-1/2 top-full z-50 w-[420px] -translate-x-1/2 pt-3">
-                    <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-lg">
+                    <div className="rounded-sm border border-gold-400/25 bg-cream p-6 shadow-lg">
                       <div className="grid grid-cols-2 gap-4">
                         {group.slugs.map((slug) => {
                           const cat = categoryBySlug(slug);
@@ -154,9 +154,9 @@ export function Header({ settings }: HeaderProps) {
                             <Link
                               key={cat.slug}
                               href={`/categorias/${cat.slug}`}
-                              className="group flex items-center gap-3 rounded-sm p-2 transition-colors hover:bg-neutral-50"
+                              className="group flex items-center gap-3 rounded-sm p-2 transition-colors hover:bg-neutral-100"
                             >
-                              <span className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-full bg-neutral-50">
+                              <span className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-full bg-neutral-100">
                                 <Image src={cat.image} alt={cat.name} fill className="object-cover p-2" />
                               </span>
                               <span className="text-sm text-ink group-hover:text-gold-600">
@@ -189,14 +189,17 @@ export function Header({ settings }: HeaderProps) {
           >
             Pedidos
           </Link>
+        </nav>
+
+        <div className="absolute right-0 flex items-center gap-4">
           <Link
             href="/conta"
             aria-label="Minha Conta"
-            className={`flex items-center justify-center text-ink transition-colors hover:text-gold-600 ${
+            className={`transition-colors hover:text-gold-600 ${
               pathname === "/conta" ? "text-gold-600" : "text-ink"
             }`}
           >
-            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <circle cx="12" cy="7" r="4.5" strokeWidth="1.3" />
               <path
                 d="M4 21v-3.25A5.75 5.75 0 019.75 12h4.5A5.75 5.75 0 0120 17.75V21"
@@ -205,11 +208,7 @@ export function Header({ settings }: HeaderProps) {
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="sr-only">Minha Conta</span>
           </Link>
-        </nav>
-
-        <div className="absolute right-0 flex items-center gap-4">
           <Link href="/carrinho" className="relative" aria-label="Carrinho">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path
@@ -230,7 +229,7 @@ export function Header({ settings }: HeaderProps) {
       </div>
 
       {menuOpen && (
-        <nav className="flex flex-col gap-1 border-t border-neutral-200 bg-white px-4 py-4 xl:hidden">
+        <nav className="flex flex-col gap-1 border-t border-gold-400/20 bg-cream px-4 py-4 xl:hidden">
           {NAV_GROUPS.map((group) => {
             if (group.type === "link") {
               const cat = categoryBySlug(group.slug);
@@ -301,23 +300,6 @@ export function Header({ settings }: HeaderProps) {
             className="py-2 text-sm uppercase tracking-wide text-ink"
           >
             Pedidos
-          </Link>
-          <Link
-            href="/conta"
-            onClick={() => setMenuOpen(false)}
-            aria-label="Minha Conta"
-            className="flex w-fit items-center py-2 text-ink transition-colors hover:text-gold-600"
-          >
-            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="7" r="4.5" strokeWidth="1.3" />
-              <path
-                d="M4 21v-3.25A5.75 5.75 0 019.75 12h4.5A5.75 5.75 0 0120 17.75V21"
-                strokeWidth="1.3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="sr-only">Minha Conta</span>
           </Link>
         </nav>
       )}

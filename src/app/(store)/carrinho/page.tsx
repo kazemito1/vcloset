@@ -41,7 +41,7 @@ export default function CartPage() {
               key={`${item.productId}-${item.variantLabel}`}
               className="flex gap-4 border-b border-gold-400/20 pb-6"
             >
-              <div className="relative h-24 w-24 flex-shrink-0 bg-white">
+              <div className="relative h-24 w-24 flex-shrink-0 bg-neutral-100">
                 <Image src={item.image} alt={item.name} fill className="object-cover" />
               </div>
               <div className="flex flex-1 flex-col justify-between">

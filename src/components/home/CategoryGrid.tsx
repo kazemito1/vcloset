@@ -16,12 +16,12 @@ export function CategoryGrid() {
             href={`/categorias/${cat.slug}`}
             className="group w-full max-w-[184px] text-center"
           >
-            <div className="relative aspect-square overflow-hidden rounded-full border border-neutral-200 bg-neutral-50 transition-colors group-hover:border-gold-400 group-hover:shadow-gold">
+            <div className="relative aspect-square overflow-hidden rounded-full border border-gold-400/25 bg-neutral-100 transition-colors group-hover:border-gold-400 group-hover:shadow-gold">
               <Image
                 src={cat.image}
                 alt={cat.name}
                 fill
-                className="object-cover p-4 transition-transform duration-500 group-hover:scale-110"
+                className="rounded-full object-cover transition-transform duration-500 group-hover:scale-110"
                 sizes="(max-width: 640px) 44vw, (max-width: 1024px) 22vw, 184px"
               />
             </div>

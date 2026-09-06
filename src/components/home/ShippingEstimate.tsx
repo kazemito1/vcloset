@@ -87,7 +87,7 @@ export function ShippingEstimate({ freeShippingCents }: { freeShippingCents: num
   }
 
   return (
-    <section className="bg-white py-16 md:py-24">
+    <section className="bg-cream py-16 md:py-24">
       <div className="container-page">
         <h2 className="section-title">Consulte o frete para sua região</h2>
         <p className="mx-auto mt-4 max-w-xl text-center text-ink/60">
@@ -103,7 +103,7 @@ export function ShippingEstimate({ freeShippingCents }: { freeShippingCents: num
               inputMode="numeric"
               maxLength={9}
               aria-label="CEP"
-              className="flex-1 border border-gold-400/40 bg-white px-4 py-3 text-sm text-ink placeholder:text-ink/40 focus:border-gold-400 focus:outline-none"
+              className="flex-1 border border-gold-400/40 bg-neutral-50 px-4 py-3 text-sm text-ink placeholder:text-ink/40 focus:border-gold-400 focus:outline-none"
             />
             <button
               type="submit"
@@ -117,7 +117,7 @@ export function ShippingEstimate({ freeShippingCents }: { freeShippingCents: num
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
           {result && (
-            <div className="mt-6 border border-gold-400/30 bg-gold-50/40 p-5 text-sm text-ink">
+            <div className="mt-6 border border-gold-400/30 bg-gold-50/70 p-5 text-sm text-ink">
               {result.city && result.state && (
                 <p className="text-ink/70">
                   Entrega para <strong>{result.city}/{result.state}</strong>

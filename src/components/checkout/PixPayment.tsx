@@ -87,7 +87,7 @@ export function PixPayment({ orderId, onPaid }: PixPaymentProps) {
           <textarea
             readOnly
             value={qrCode}
-            className="w-full resize-none border border-gold-400/40 bg-white p-3 text-xs text-ink/70"
+            className="w-full resize-none border border-gold-400/40 bg-neutral-50 p-3 text-xs text-ink/70"
             rows={3}
           />
           <button onClick={copyCode} className="btn-gold-outline mt-2 w-full">

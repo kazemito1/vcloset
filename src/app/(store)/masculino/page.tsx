@@ -40,6 +40,7 @@ export default async function MasculinoPage() {
               priceCents={p.priceCents}
               salePriceCents={p.salePriceCents}
               image={p.images[0]}
+              hoverImage={p.images[1]}
             />
           ))}
         </div>

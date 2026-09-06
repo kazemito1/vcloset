@@ -28,7 +28,7 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
     <div>
       <div
         ref={containerRef}
-        className="relative aspect-[3/4] cursor-zoom-in overflow-hidden bg-white"
+        className="relative aspect-[3/4] cursor-zoom-in overflow-hidden bg-neutral-100"
         onMouseEnter={() => setZooming(true)}
         onMouseLeave={() => setZooming(false)}
         onMouseMove={handleMouseMove}

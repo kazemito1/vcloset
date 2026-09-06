@@ -69,7 +69,7 @@ export function CouponBox() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Cupom ou código de indicação"
-          className="flex-1 border border-gold-400/40 bg-white px-3 py-2 text-sm uppercase"
+          className="flex-1 border border-gold-400/40 bg-neutral-50 px-3 py-2 text-sm uppercase"
         />
         <button
           type="submit"

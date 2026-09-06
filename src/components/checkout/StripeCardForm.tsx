@@ -71,7 +71,7 @@ export function StripeCardForm({ onSuccess }: StripeCardFormProps) {
             value={cardName}
             onChange={(e) => setCardName(e.target.value)}
             placeholder="Como está no cartão"
-            className="w-full border border-gold-400/40 bg-white px-4 py-3 text-ink outline-none focus:border-ink"
+            className="w-full border border-gold-400/40 bg-neutral-50 px-4 py-3 text-ink outline-none focus:border-ink"
           />
         </label>
 
@@ -83,7 +83,7 @@ export function StripeCardForm({ onSuccess }: StripeCardFormProps) {
             value={cardNumber}
             onChange={(e) => handleNumberChange(e.target.value)}
             placeholder="0000 0000 0000 0000"
-            className="w-full border border-gold-400/40 bg-white px-4 py-3 text-ink outline-none focus:border-ink"
+            className="w-full border border-gold-400/40 bg-neutral-50 px-4 py-3 text-ink outline-none focus:border-ink"
           />
         </label>
 
@@ -96,7 +96,7 @@ export function StripeCardForm({ onSuccess }: StripeCardFormProps) {
               value={cardExpiry}
               onChange={(e) => handleExpiryChange(e.target.value)}
               placeholder="MM/AA"
-              className="w-full border border-gold-400/40 bg-white px-4 py-3 text-ink outline-none focus:border-ink"
+              className="w-full border border-gold-400/40 bg-neutral-50 px-4 py-3 text-ink outline-none focus:border-ink"
             />
           </label>
 
@@ -108,7 +108,7 @@ export function StripeCardForm({ onSuccess }: StripeCardFormProps) {
               value={cardCvv}
               onChange={(e) => handleCvvChange(e.target.value)}
               placeholder="123"
-              className="w-full border border-gold-400/40 bg-white px-4 py-3 text-ink outline-none focus:border-ink"
+              className="w-full border border-gold-400/40 bg-neutral-50 px-4 py-3 text-ink outline-none focus:border-ink"
             />
           </label>
         </div>

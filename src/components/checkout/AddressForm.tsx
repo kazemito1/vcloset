@@ -18,7 +18,7 @@ interface AddressFormProps {
 }
 
 const inputClass =
-  "w-full border border-gold-400/40 bg-white px-4 py-3 text-sm text-ink placeholder:text-ink/40 focus:border-gold-400 focus:outline-none";
+  "w-full border border-gold-400/40 bg-neutral-50 px-4 py-3 text-sm text-ink placeholder:text-ink/40 focus:border-gold-400 focus:outline-none";
 
 function formatCep(digits: string): string {
   if (digits.length <= 5) return digits;
