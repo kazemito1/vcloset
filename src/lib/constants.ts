@@ -6,6 +6,7 @@ export const CATEGORIES = [
   { name: "Relógios", slug: "relogios", image: "/products/placeholder-relogios.svg" },
   { name: "Alianças", slug: "aliancas", image: "/products/placeholder-aliancas.svg" },
   { name: "Acessórios", slug: "acessorios", image: "/products/placeholder-acessorios.svg" },
+  { name: "Trajes", slug: "trajes", image: "/products/placeholder-trajes.svg" },
 ];
 
 // Estrutura de navegação do header, agrupando as categorias em seções
@@ -21,6 +22,7 @@ export const NAV_GROUPS: NavGroup[] = [
   { label: "Joias", type: "dropdown", slugs: ["aneis", "colares", "brincos", "pulseiras"] },
   { label: "Relógios", type: "link", slug: "relogios" },
   { label: "Acessórios", type: "link", slug: "acessorios" },
+  { label: "Trajes", type: "link", slug: "trajes" },
 ];
 
 export const STORE_NAME = "V.CLOSET";

@@ -1,0 +1,10 @@
+<svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="600" fill="#FAF7F2"/>
+  <rect x="20" y="20" width="560" height="560" fill="none" stroke="#D4AF37" stroke-width="1.5"/>
+  <path d="M265 150 L300 140 L335 150 L345 265 L255 265 Z" fill="none" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M275 150 L275 265 M325 150 L325 265" stroke="#D4AF37" stroke-width="2" fill="none"/>
+  <path d="M258 285 L342 285 L358 450 L242 450 Z" fill="none" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M262 310 L338 310 M266 335 L334 335 M270 360 L330 360 M274 385 L326 385 M278 410 L322 410" stroke="#D4AF37" stroke-width="1.8" fill="none"/>
+  <text x="300" y="500" font-family="Georgia, serif" font-size="26" fill="#0A0A0A" text-anchor="middle" letter-spacing="4">V.CLOSET</text>
+  <text x="300" y="535" font-family="Georgia, serif" font-size="16" fill="#B08C3D" text-anchor="middle" letter-spacing="3">CONJUNTO TRICÔ</text>
+</svg>
