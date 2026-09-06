@@ -132,6 +132,14 @@ export function Header({ settings }: HeaderProps) {
           >
             Pedidos
           </Link>
+          <Link
+            href="/conta"
+            className={`text-sm uppercase tracking-wide transition-colors hover:text-gold-600 ${
+              pathname === "/conta" ? "text-gold-600" : "text-ink"
+            }`}
+          >
+            Minha Conta
+          </Link>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -232,6 +240,13 @@ export function Header({ settings }: HeaderProps) {
             className="py-2 text-sm uppercase tracking-wide text-ink"
           >
             Pedidos
+          </Link>
+          <Link
+            href="/conta"
+            onClick={() => setMenuOpen(false)}
+            className="py-2 text-sm uppercase tracking-wide text-ink"
+          >
+            Minha Conta
           </Link>
         </nav>
       )}

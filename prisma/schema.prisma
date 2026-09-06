@@ -240,3 +240,14 @@ model Lead {
   totalCents    Int
   createdAt     DateTime @default(now())
 }
+
+// Conta do cliente final (checkout/carrinho): login para acompanhar pedidos.
+// Os pedidos continuam no model Lead; a associação é feita pelo e-mail.
+model Customer {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
