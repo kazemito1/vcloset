@@ -4,13 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push && tsx prisma/seed-trajes.ts && next build",
+    "build": "prisma db push && tsx prisma/seed-trajes.ts && tsx prisma/seed-masculino.ts && tsx prisma/seed-sapatos.ts && next build",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:seed:trajes": "tsx prisma/seed-trajes.ts",
+    "prisma:seed:masculino": "tsx prisma/seed-masculino.ts",
+    "prisma:seed:sapatos": "tsx prisma/seed-sapatos.ts",
     "prisma:seed:cupons": "tsx prisma/seed-incremental-cupons.ts",
     "postinstall": "prisma generate"
   },

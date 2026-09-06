@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 import { CATEGORIES, NAV_GROUPS, STORE_NAME } from "@/lib/constants";
 import { useCartStore } from "@/store/cartStore";
 import { formatBRL } from "@/lib/format";
@@ -20,18 +20,46 @@ export function Header({ settings }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileGroupOpen, setMobileGroupOpen] = useState<string | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [cep, setCep] = useState("");
+  const [cepSaved, setCepSaved] = useState(false);
   const pathname = usePathname();
   const totalItems = useCartStore((s) => s.totalItems());
   const freeShippingLabel = settings ? formatBRL(settings.freeShippingCents) : "R$ 499";
+
+  useEffect(() => {
+    setCep(window.localStorage.getItem("vcloset-cep") ?? "");
+  }, []);
+
+  function handleCepChange(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    setCep(digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits);
+    setCepSaved(false);
+  }
+
+  function handleCepSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (cep.replace(/\D/g, "").length === 8) {
+      window.localStorage.setItem("vcloset-cep", cep);
+      setCepSaved(true);
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white/95 backdrop-blur">
       <div className="bg-ink py-2 text-center text-xs uppercase tracking-wide text-gold-400">
         Frete grátis para todo o Brasil em compras acima de {freeShippingLabel}
       </div>
-      <div className="container-page flex items-center justify-between py-4">
+      <div className="container-page flex justify-center py-3">
+        <Link href="/">
+          <span className="font-serif text-2xl tracking-widest2 text-ink md:text-3xl">
+            {STORE_NAME}
+          </span>
+        </Link>
+      </div>
+      <div className="border-t border-neutral-100">
+        <div className="container-page relative flex min-h-[58px] items-center justify-center py-3">
         <button
-          className="lg:hidden text-ink"
+          className="absolute left-0 text-ink xl:hidden"
           aria-label="Abrir menu"
           onClick={() => setMenuOpen((v) => !v)}
         >
@@ -40,13 +68,50 @@ export function Header({ settings }: HeaderProps) {
           </svg>
         </button>
 
-        <Link href="/" className="flex-1 text-center lg:flex-none">
-          <span className="font-serif text-2xl md:text-3xl tracking-widest2 text-ink">
-            {STORE_NAME}
-          </span>
-        </Link>
+        <form
+          onSubmit={handleCepSubmit}
+          className="absolute left-0 hidden items-center gap-2 xl:flex"
+        >
+          <label className="sr-only" htmlFor="header-cep">
+            Informe seu CEP
+          </label>
+          <div className="flex h-9 items-center border-b border-neutral-300 focus-within:border-gold-500">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              className="mr-2 text-gold-600"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 21s7-5.2 7-12A7 7 0 105 9c0 6.8 7 12 7 12z"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="12" cy="9" r="2.5" strokeWidth="1.5" />
+            </svg>
+            <input
+              id="header-cep"
+              value={cep}
+              onChange={(event) => handleCepChange(event.target.value)}
+              inputMode="numeric"
+              maxLength={9}
+              placeholder="Informe seu CEP"
+              className="w-28 bg-transparent text-xs tracking-wide text-ink outline-none placeholder:text-ink/45"
+            />
+          </div>
+          <button
+            type="submit"
+            className="text-[10px] font-medium uppercase tracking-wide text-gold-700 hover:text-gold-500"
+          >
+            {cepSaved ? "Salvo" : "OK"}
+          </button>
+        </form>
 
-        <nav className="hidden lg:flex flex-1 justify-center gap-8">
+        <nav className="hidden items-center justify-center gap-7 xl:flex">
           {NAV_GROUPS.map((group) => {
             if (group.type === "link") {
               const cat = categoryBySlug(group.slug);
@@ -134,7 +199,7 @@ export function Header({ settings }: HeaderProps) {
           </Link>
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="absolute right-0 flex items-center gap-4">
           <Link href="/carrinho" className="relative" aria-label="Carrinho">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path
@@ -151,10 +216,11 @@ export function Header({ settings }: HeaderProps) {
             )}
           </Link>
         </div>
+        </div>
       </div>
 
       {menuOpen && (
-        <nav className="lg:hidden flex flex-col gap-1 border-t border-neutral-200 bg-white px-4 py-4">
+        <nav className="flex flex-col gap-1 border-t border-neutral-200 bg-white px-4 py-4 xl:hidden">
           {NAV_GROUPS.map((group) => {
             if (group.type === "link") {
               const cat = categoryBySlug(group.slug);

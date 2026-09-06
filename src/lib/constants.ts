@@ -7,6 +7,8 @@ export const CATEGORIES = [
   { name: "Alianças", slug: "aliancas", image: "/products/category-aliancas.png" },
   { name: "Acessórios", slug: "acessorios", image: "/products/category-acessorios.png" },
   { name: "Trajes Femininos", slug: "trajes-femininos", image: "/products/category-trajes-femininos.png" },
+  { name: "Masculino", slug: "masculino", image: "/products/category-masculino.png" },
+  { name: "Sapatos", slug: "sapatos", image: "/products/category-sapatos.png" },
 ];
 
 // Estrutura de navegação do header, agrupando as categorias em seções
@@ -21,6 +23,8 @@ export type NavGroup =
 export const NAV_GROUPS: NavGroup[] = [
   { label: "Joias", type: "dropdown", slugs: ["aneis", "colares", "brincos", "pulseiras"] },
   { label: "Trajes Femininos", type: "link", slug: "trajes-femininos" },
+  { label: "Masculino", type: "link", slug: "masculino" },
+  { label: "Sapatos", type: "link", slug: "sapatos" },
   { label: "Relógios", type: "link", slug: "relogios" },
   { label: "Acessórios", type: "link", slug: "acessorios" },
 ];

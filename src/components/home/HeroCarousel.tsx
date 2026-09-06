@@ -1,163 +1,30 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-
-interface Slide {
-  eyebrow: string;
-  title: string;
-  subtitle: string;
-  ctaLabel: string;
-  ctaHref: string;
-  // Imagem de fundo editorial (opcional). Quando presente, o slide mostra a
-  // imagem em tela cheia com um véu claro para manter o texto legível.
-  image?: string;
-  // Vídeo de fundo editorial (opcional). Tem precedência sobre a imagem.
-  // Deve ser um arquivo MP4/WebM hospedado em /videos/ ou URL externa.
-  video?: string;
-}
-
-const SLIDES: Slide[] = [
-  {
-    eyebrow: "Joalheria Premium",
-    title: "V.CLOSET",
-    subtitle:
-      "Peças exclusivas em ouro, prata e materiais nobres — para eternizar os momentos mais importantes da sua vida.",
-    ctaLabel: "Ver coleção",
-    ctaHref: "/categorias/aneis",
-  },
-  {
-    eyebrow: "Editorial V.CLOSET",
-    title: "Elegância que Brilha",
-    subtitle:
-      "Joias em ouro e semijoias finas que transformam produções em declarações de estilo.",
-    ctaLabel: "Ver joias",
-    ctaHref: "/categorias/colares",
-    image: "/images/editorial-joias.jpg",
-  },
-  {
-    eyebrow: "Moda Feminina",
-    title: "Trajes que Empoderam",
-    subtitle:
-      "Descubra a nova categoria Trajes Femininos com peças inspiradas no design sofisticado da AMARO.",
-    ctaLabel: "Ver trajes femininos",
-    ctaHref: "/categorias/trajes-femininos",
-    image: "/images/hero-moda-inverno.png",
-  },
-  {
-    eyebrow: "Inspiração",
-    title: "Joias + Roupas",
-    subtitle:
-      "Combine nossas joias com as novas peças de trajes femininos para criar looks elegantes e atemporais.",
-    ctaLabel: "Explorar looks",
-    ctaHref: "/categorias/trajes-femininos",
-    image: "/images/hero-estilo-completo.png",
-  },
-  {
-    eyebrow: "Novidades",
-    title: "Coleção Alianças",
-    subtitle: "Simbolize seu compromisso com peças atemporais, feitas para durar gerações.",
-    ctaLabel: "Explorar alianças",
-    ctaHref: "/categorias/aliancas",
-  },
-  {
-    eyebrow: "Presentes",
-    title: "Para Momentos Únicos",
-    subtitle: "Colares, brincos e pulseiras selecionados para presentear com sofisticação.",
-    ctaLabel: "Ver presentes",
-    ctaHref: "/categorias/colares",
-  },
-];
 
 export function HeroCarousel() {
-  const [active, setActive] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActive((prev) => (prev + 1) % SLIDES.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
-
-  function goTo(idx: number) {
-    setActive(idx);
-  }
-
-  function prev() {
-    setActive((p) => (p - 1 + SLIDES.length) % SLIDES.length);
-  }
-
-  function next() {
-    setActive((p) => (p + 1) % SLIDES.length);
-  }
-
-  const slide = SLIDES[active];
-  const hasMedia = Boolean(slide.image || slide.video);
-
   return (
-    <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden bg-neutral-50 text-ink">
-      {hasMedia && (
-        <>
-          {slide.video ? (
-            // eslint-disable-next-line jsx-a11y/media-has-caption
-            <video
-              src={slide.video}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : slide.image ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={slide.image}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : null}
-          <div className="absolute inset-0 bg-gradient-to-r from-neutral-50 via-neutral-50/75 to-neutral-50/15" />
-        </>
-      )}
+    <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden bg-black text-white">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        poster="/images/hero-vcloset-editorial-poster.png"
+        className="absolute inset-0 h-full w-full object-cover"
+        aria-hidden="true"
+      >
+        <source src="/videos/hero-vcloset-editorial.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 bg-black/45" />
       <div className="relative z-10 mx-auto max-w-3xl px-4 text-center">
-        <p className="mb-4 text-xs uppercase tracking-widest2 text-gold-600">{slide.eyebrow}</p>
-        <h1 className="font-serif text-4xl leading-tight md:text-6xl">{slide.title}</h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-ink/70">{slide.subtitle}</p>
-        <Link href={slide.ctaHref} className="btn-gold mt-8 inline-flex">
-          {slide.ctaLabel}
+        <p className="mb-4 text-xs uppercase tracking-widest2 text-gold-300">Joalheria Premium</p>
+        <h1 className="font-serif text-4xl leading-tight md:text-6xl">V.CLOSET</h1>
+        <p className="mx-auto mt-6 max-w-xl text-lg text-white/85">
+          Joias que acompanham a sua essência, feitas para marcar cada momento.
+        </p>
+        <Link href="/categorias/aneis" className="btn-gold mt-8 inline-flex">
+          Ver coleção
         </Link>
-      </div>
-
-      <button
-        aria-label="Slide anterior"
-        onClick={prev}
-        className="absolute left-4 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-neutral-200 bg-white p-2 text-ink transition-colors hover:border-gold-400 md:block"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M15 18l-6-6 6-6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      <button
-        aria-label="Próximo slide"
-        onClick={next}
-        className="absolute right-4 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-neutral-200 bg-white p-2 text-ink transition-colors hover:border-gold-400 md:block"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M9 18l6-6-6-6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-
-      <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-        {SLIDES.map((_, idx) => (
-          <button
-            key={idx}
-            aria-label={`Ir para slide ${idx + 1}`}
-            onClick={() => goTo(idx)}
-            className={`h-1.5 rounded-full transition-all ${
-              idx === active ? "w-8 bg-gold-500" : "w-4 bg-gold-500/30"
-            }`}
-          />
-        ))}
       </div>
     </section>
   );
