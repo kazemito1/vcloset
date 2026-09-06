@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPanelSession } from "@/lib/leadsPanelAuth";
+import { notifyShippedOrders } from "@/lib/shippingNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,9 @@ export async function GET(req: NextRequest) {
   const leads = await prisma.lead.findMany({
     orderBy: { createdAt: "desc" },
   });
+
+  // Dispara o e-mail de "Pedido enviado" para quem acabou de atingir o prazo
+  await notifyShippedOrders(leads);
 
   return NextResponse.json({ leads });
 }

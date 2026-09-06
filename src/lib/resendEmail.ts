@@ -41,9 +41,7 @@ export async function sendConfirmationEmail(
             </tr>
             <tr>
               <td align="center" style="padding:40px 32px 8px;">
-                <p style="margin:0;font-size:10px;letter-spacing:6px;text-transform:uppercase;color:#a3a3a3;">Checkout</p>
-                <img src="${APP_URL}/logo-vcloset-email.png" width="220" alt="VCLOSET — Joias e Acessórios" style="display:block;margin:14px auto 0;width:220px;max-width:100%;height:auto;border:0;" />
-                <p style="margin:10px 0 0;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#d4af37;opacity:0.75;">Joias e Acessórios</p>
+                <img src="${APP_URL}/logo-vcloset-email.png" width="220" alt="VCLOSET — Joias e Acessórios" style="display:block;margin:0 auto;width:220px;max-width:100%;height:auto;border:0;" />
               </td>
             </tr>
             <tr>
@@ -95,6 +93,96 @@ export async function sendConfirmationEmail(
         from: FROM,
         to,
         subject: "Recebemos o seu pedido — V.CLOSET",
+        html,
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error("[email] Resend retornou erro:", res.status, body);
+      return { sent: false, reason: `resend-error-${res.status}` };
+    }
+
+    return { sent: true };
+  } catch (err) {
+    console.error("[email] falha ao enviar:", err);
+    return { sent: false, reason: "network-error" };
+  }
+}
+
+// E-mail disparado quando o pedido muda para "Pedido enviado".
+export async function sendShippingEmail(
+  to: string,
+  fullName: string
+): Promise<SendResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    console.warn(
+      "[email] RESEND_API_KEY não configurada — e-mail de envio não disparado."
+    );
+    return { sent: false, reason: "not-configured" };
+  }
+
+  const firstName = fullName.trim().split(/\s+/)[0] || fullName;
+
+  const html = `<!doctype html>
+<html lang="pt-BR">
+  <body style="margin:0;padding:0;background-color:#0a0a0a;font-family:Georgia,'Times New Roman',serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background-color:#141414;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;">
+            <tr>
+              <td style="height:3px;background:linear-gradient(to right,transparent,#d4af37,transparent);font-size:0;line-height:0;">&nbsp;</td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:40px 32px 8px;">
+                <img src="${APP_URL}/logo-vcloset-email.png" width="220" alt="VCLOSET — Joias e Acessórios" style="display:block;margin:0 auto;width:220px;max-width:100%;height:auto;border:0;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 40px 40px;">
+                <h1 style="margin:0 0 16px;font-size:20px;color:#f5f5f5;font-family:Georgia,serif;font-weight:normal;">
+                  Olá, ${firstName}!
+                </h1>
+                <p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#c8c8c8;font-family:Arial,Helvetica,sans-serif;">
+                  Enviamos o seu pedido, em breve informaremos o rastreio para
+                  acompanhar o seu pedido.
+                </p>
+                <p style="margin:0 0 28px;font-size:14px;line-height:1.7;color:#c8c8c8;font-family:Arial,Helvetica,sans-serif;">
+                  Agradecemos pela preferência.
+                </p>
+                <p style="margin:0;font-size:13px;color:#d4af37;font-family:Georgia,serif;">
+                  Att, V.CLOSET Store
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px;border-top:1px solid #2a2a2a;">
+                <p style="margin:0;text-align:center;font-size:11px;color:#a3a3a3;font-family:Arial,Helvetica,sans-serif;">
+                  Este é um e-mail automático — não é necessário responder.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM,
+        to,
+        subject: "Seu pedido foi enviado — V.CLOSET",
         html,
       }),
     });

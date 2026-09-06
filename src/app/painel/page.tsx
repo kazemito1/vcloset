@@ -499,14 +499,18 @@ export default function LeadsPanelPage() {
                         <div className="text-right">
                           <span
                             className={`inline-block rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 ${
-                              getOrderStatus(lead.createdAt) === "PAGO"
-                                ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
-                                : "border-amber-400/40 bg-amber-400/10 text-amber-300"
+                              getOrderStatus(lead.createdAt) === "ENVIADO"
+                                ? "border-sky-400/40 bg-sky-400/10 text-sky-300"
+                                : getOrderStatus(lead.createdAt) === "PAGO"
+                                  ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
+                                  : "border-amber-400/40 bg-amber-400/10 text-amber-300"
                             }`}
                           >
-                            {getOrderStatus(lead.createdAt) === "PAGO"
-                              ? "Pedido pago"
-                              : "Aguardando pagamento"}
+                            {getOrderStatus(lead.createdAt) === "ENVIADO"
+                              ? "Pedido enviado"
+                              : getOrderStatus(lead.createdAt) === "PAGO"
+                                ? "Pedido pago"
+                                : "Aguardando pagamento"}
                           </span>
                           <p className="mt-1.5 text-sm font-bold text-gold-400">
                             {formatBRL(lead.totalCents)}

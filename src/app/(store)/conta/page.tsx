@@ -49,9 +49,11 @@ function OrderCard({ order }: { order: Order }) {
         </div>
         <span
           className={`inline-block rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 ${
-            order.status === "PAGO"
-              ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
-              : "border-amber-400/40 bg-amber-400/10 text-amber-300"
+            order.status === "ENVIADO"
+              ? "border-sky-400/40 bg-sky-400/10 text-sky-300"
+              : order.status === "PAGO"
+                ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
+                : "border-amber-400/40 bg-amber-400/10 text-amber-300"
           }`}
         >
           {ORDER_STATUS_LABEL[order.status]}

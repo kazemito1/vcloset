@@ -1,18 +1,23 @@
-// Status do pedido derivado do tempo: "Aguardando pagamento" vira "Pedido pago"
-// automaticamente após o prazo configurado (padrão: 3 minutos).
-// Ajuste via variável de ambiente ORDER_AUTO_PAID_MINUTES (em minutos).
+// Status do pedido derivado do tempo:
+//   Aguardando pagamento → Pedido pago (após ORDER_AUTO_PAID_MINUTES, padrão 3 min)
+//   Pedido pago → Pedido enviado (após ORDER_AUTO_SHIPPED_MINUTES, padrão 24 h)
+// Ajuste os prazos via variáveis de ambiente (em minutos).
 
-export type OrderStatus = "AGUARDANDO_PAGAMENTO" | "PAGO";
+export type OrderStatus = "AGUARDANDO_PAGAMENTO" | "PAGO" | "ENVIADO";
 
 const AUTO_PAID_MINUTES = Number(process.env.ORDER_AUTO_PAID_MINUTES || 3);
+const AUTO_SHIPPED_MINUTES = Number(process.env.ORDER_AUTO_SHIPPED_MINUTES || 1440);
 
 export function getOrderStatus(createdAt: Date | string): OrderStatus {
   const created = new Date(createdAt).getTime();
   const elapsedMs = Date.now() - created;
-  return elapsedMs >= AUTO_PAID_MINUTES * 60 * 1000 ? "PAGO" : "AGUARDANDO_PAGAMENTO";
+  if (elapsedMs >= AUTO_SHIPPED_MINUTES * 60 * 1000) return "ENVIADO";
+  if (elapsedMs >= AUTO_PAID_MINUTES * 60 * 1000) return "PAGO";
+  return "AGUARDANDO_PAGAMENTO";
 }
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   AGUARDANDO_PAGAMENTO: "Aguardando pagamento",
   PAGO: "Pedido pago",
+  ENVIADO: "Pedido enviado",
 };

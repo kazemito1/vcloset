@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCustomerSession } from "@/lib/customerAuth";
 import { getOrderStatus } from "@/lib/orderStatus";
+import { notifyShippedOrders } from "@/lib/shippingNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -26,22 +27,22 @@ export async function GET(req: NextRequest) {
     where: { email: customer.email },
     orderBy: { createdAt: "desc" },
     take: 50,
-    select: {
-      id: true,
-      fullName: true,
-      createdAt: true,
-      itemsJson: true,
-      subtotalCents: true,
-      discountCents: true,
-      totalCents: true,
-      installments: true,
-    },
   });
+
+  // Dispara o e-mail de "Pedido enviado" para quem acabou de atingir o prazo
+  await notifyShippedOrders(leads);
 
   return NextResponse.json({
     customer,
     orders: leads.map((lead) => ({
-      ...lead,
+      id: lead.id,
+      fullName: lead.fullName,
+      createdAt: lead.createdAt,
+      itemsJson: lead.itemsJson,
+      subtotalCents: lead.subtotalCents,
+      discountCents: lead.discountCents,
+      totalCents: lead.totalCents,
+      installments: lead.installments,
       status: getOrderStatus(lead.createdAt),
     })),
   });
