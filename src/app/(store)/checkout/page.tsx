@@ -218,9 +218,11 @@ export default function CheckoutPage() {
           <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-cream/50">
             Checkout
           </p>
-          <h1 className="mt-2 font-serif text-4xl font-medium tracking-widest2 text-cream sm:text-[2.75rem]">
-            <span className="text-gold-400">V</span>CLOSET
-          </h1>
+          <img
+            src="/logo-vcloset-plain.svg"
+            alt="VCLOSET — Joias e Acessórios"
+            className="mx-auto mt-3 h-auto w-64 sm:w-80"
+          />
           <div className="mx-auto mt-4 flex items-center justify-center gap-3">
             <span className="h-px w-16 bg-gold-400/20" />
             <span className="h-1.5 w-1.5 rotate-45 border border-gold-400" />
@@ -531,19 +533,47 @@ export default function CheckoutPage() {
             </button>
 
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <PayBadge label="VISA" className="text-sm font-extrabold italic tracking-tighter text-cream/80" />
+              {/* Visa */}
+              <PayBadge label="VISA" className="text-xs font-extrabold italic tracking-tighter text-white" />
+
+              {/* Mastercard */}
               <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/15 bg-ink-soft">
-                <svg viewBox="0 0 48 30" className="h-3.5" aria-label="Mastercard" role="img">
+                <svg viewBox="0 0 48 30" className="h-4" aria-label="Mastercard" role="img">
                   <circle cx="15" cy="15" r="10" fill="#EB001B" />
                   <circle cx="33" cy="15" r="10" fill="#F79E1B" />
                   <path fill="#FF5F00" d="M24 10.637 A10 10 0 0 1 24 19.363 A10 10 0 0 1 24 10.637 Z" />
                 </svg>
               </span>
-              <PayBadge label="AMEX" className="rounded bg-[#016FD0] px-2 py-0.5 text-[10px] font-extrabold italic text-white" />
-              <PayBadge label="ELO" className="text-sm font-extrabold italic tracking-tight text-cream/80" />
-              <PayBadge label="DISCOVER" className="text-[9px] font-extrabold tracking-tight text-cream/80" />
-              <span className="flex h-7 items-center justify-center rounded-md border border-gold-400/15 bg-ink-soft px-3">
-                <span className="text-xs font-bold lowercase tracking-tight text-[#32BCAD]">pix</span>
+
+              {/* Elo */}
+              <span className="flex h-7 w-12 items-center justify-center gap-0.5 rounded-md border border-gold-400/15 bg-ink-soft">
+                <span className="text-xs font-extrabold lowercase italic tracking-tight text-white">elo</span>
+                <span className="flex flex-col gap-0.5">
+                  <span className="flex gap-0.5">
+                    <span className="h-1 w-1 rounded-full bg-[#FFCB05]" />
+                    <span className="h-1 w-1 rounded-full bg-[#EF4123]" />
+                  </span>
+                  <span className="flex justify-center">
+                    <span className="h-1 w-1 rounded-full bg-[#00A4E0]" />
+                  </span>
+                </span>
+              </span>
+
+              {/* Discover */}
+              <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/15 bg-ink-soft">
+                <span className="text-[8px] font-extrabold tracking-tight text-white">
+                  DISC<span className="text-[#FF6000]">O</span>VER
+                </span>
+              </span>
+
+              {/* Nubank */}
+              <span className="flex h-7 w-12 items-center justify-center rounded-md bg-[#820AD1]">
+                <span className="text-xs font-extrabold lowercase tracking-tight text-white">nu</span>
+              </span>
+
+              {/* Pix */}
+              <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/15 bg-ink-soft">
+                <span className="text-xs font-extrabold lowercase tracking-tight text-[#32BCAD]">pix</span>
               </span>
             </div>
 
