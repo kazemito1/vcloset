@@ -1,0 +1,17 @@
+name: Atualizacao automatica de pedidos
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar verificacao de status e envio de e-mails
+        run: |
+          curl -sS --fail-with-body \
+            "https://vcllosetstore.com.br/api/cron/status" \
+            -H "Authorization: Bearer ${{ secrets.ADMIN_SECRET }}" \
+            || echo "Falhou; sera tentado novamente no proximo ciclo."
