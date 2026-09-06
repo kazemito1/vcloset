@@ -56,6 +56,7 @@ export default function LeadsPanelPage() {
   const [loadingLeads, setLoadingLeads] = useState(false);
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
+  const [tab, setTab] = useState<"leads" | "pedidos">("leads");
 
   const filteredLeads = useMemo(() => {
     if (!filterFrom && !filterTo) return leads;
@@ -271,6 +272,31 @@ export default function LeadsPanelPage() {
           </div>
         </div>
 
+        <div className="mt-8 flex gap-6 border-b border-gold-400/15">
+          <button
+            onClick={() => setTab("leads")}
+            className={`-mb-px border-b-2 pb-3 text-[11px] font-bold uppercase tracking-widest2 transition ${
+              tab === "leads"
+                ? "border-gold-400 text-gold-400"
+                : "border-transparent text-cream/50 hover:text-cream/80"
+            }`}
+          >
+            Leads ({leads.length})
+          </button>
+          <button
+            onClick={() => setTab("pedidos")}
+            className={`-mb-px border-b-2 pb-3 text-[11px] font-bold uppercase tracking-widest2 transition ${
+              tab === "pedidos"
+                ? "border-gold-400 text-gold-400"
+                : "border-transparent text-cream/50 hover:text-cream/80"
+            }`}
+          >
+            Pedidos ({leads.length})
+          </button>
+        </div>
+
+        {tab === "leads" && (
+        <>
         <div className="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-gold-400/15 bg-ink-soft px-5 py-4">
           <div>
             <label
@@ -414,6 +440,76 @@ export default function LeadsPanelPage() {
               );
             })}
           </div>
+        )}
+        </>
+        )}
+
+        {tab === "pedidos" && (
+          leads.length === 0 ? (
+            <p className="mt-16 text-center text-sm text-cream/50">
+              Nenhum pedido recebido ainda.
+            </p>
+          ) : filteredLeads.length === 0 ? (
+            <p className="mt-16 text-center text-sm text-cream/50">
+              Nenhum pedido no período selecionado.
+            </p>
+          ) : (
+            <>
+              <p className="mt-6 text-xs uppercase tracking-widest2 text-cream/50">
+                {filteredLeads.length} pedido
+                {filteredLeads.length === 1 ? "" : "s"} ·{" "}
+                {formatBRL(
+                  filteredLeads.reduce((sum, l) => sum + l.totalCents, 0)
+                )}{" "}
+                em vendas
+              </p>
+              <div className="mt-4 space-y-3">
+                {filteredLeads.map((lead) => {
+                  let items: LeadItem[] = [];
+                  try {
+                    items = JSON.parse(lead.itemsJson) as LeadItem[];
+                  } catch {
+                    items = [];
+                  }
+
+                  return (
+                    <div
+                      key={lead.id}
+                      className="rounded-lg border border-gold-400/15 bg-ink-soft p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-cream">
+                            #{lead.id.slice(-6).toUpperCase()} · {lead.fullName}
+                          </p>
+                          <p className="mt-0.5 truncate text-xs text-cream/50">
+                            {items
+                              .map((i) => `${i.productName} × ${i.quantity}`)
+                              .join(", ") || "—"}
+                          </p>
+                          <p className="mt-0.5 text-xs text-cream/50">
+                            {new Date(lead.createdAt).toLocaleString("pt-BR")} ·{" "}
+                            {lead.installments}
+                            {lead.installments === "1"
+                              ? "x (à vista)"
+                              : "x sem juros"}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className="inline-block rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 text-amber-300">
+                            Aguardando pagamento
+                          </span>
+                          <p className="mt-1.5 text-sm font-bold text-gold-400">
+                            {formatBRL(lead.totalCents)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )
         )}
       </div>
     </main>
