@@ -9,6 +9,9 @@ interface Slide {
   subtitle: string;
   ctaLabel: string;
   ctaHref: string;
+  // Imagem de fundo editorial (opcional). Quando presente, o slide mostra a
+  // imagem em tela cheia com um véu claro para manter o texto legível.
+  image?: string;
 }
 
 const SLIDES: Slide[] = [
@@ -19,6 +22,15 @@ const SLIDES: Slide[] = [
       "Peças exclusivas em ouro, prata e materiais nobres — para eternizar os momentos mais importantes da sua vida.",
     ctaLabel: "Ver coleção",
     ctaHref: "/categorias/aneis",
+  },
+  {
+    eyebrow: "Editorial V.CLOSET",
+    title: "Elegância que Brilha",
+    subtitle:
+      "Joias em ouro e semijoias finas que transformam produções em declarações de estilo.",
+    ctaLabel: "Ver joias",
+    ctaHref: "/categorias/colares",
+    image: "/images/editorial-joias.svg",
   },
   {
     eyebrow: "Novidades",
@@ -33,6 +45,15 @@ const SLIDES: Slide[] = [
     subtitle: "Colares, brincos e pulseiras selecionados para presentear com sofisticação.",
     ctaLabel: "Ver presentes",
     ctaHref: "/categorias/colares",
+  },
+  {
+    eyebrow: "Nova Categoria",
+    title: "Trajes & Alfaiataria",
+    subtitle:
+      "Conjuntos, blazers e peças sofisticadas para um guarda-roupa elegante e atemporal.",
+    ctaLabel: "Ver trajes",
+    ctaHref: "/categorias/trajes",
+    image: "/images/editorial-trajes.svg",
   },
 ];
 
@@ -62,6 +83,17 @@ export function HeroCarousel() {
 
   return (
     <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden bg-neutral-50 text-ink">
+      {slide.image && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={slide.image}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-neutral-50 via-neutral-50/75 to-neutral-50/15" />
+        </>
+      )}
       <div className="relative z-10 mx-auto max-w-3xl px-4 text-center">
         <p className="mb-4 text-xs uppercase tracking-widest2 text-gold-600">{slide.eyebrow}</p>
         <h1 className="font-serif text-4xl leading-tight md:text-6xl">{slide.title}</h1>

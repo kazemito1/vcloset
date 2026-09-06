@@ -1,0 +1,22 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow" cx="62%" cy="45%" r="45%">
+      <stop offset="0%" stop-color="#EFE3C0" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#FAF7F2" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="#FAF7F2"/>
+  <rect x="24" y="24" width="1552" height="852" fill="none" stroke="#D4AF37" stroke-width="2"/>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+  <g transform="translate(720,140) scale(1.05)">
+    <path d="M140 660 C150 520 210 445 295 415 C315 408 327 396 332 372 C300 334 288 262 308 210 C326 150 425 138 460 192 C484 232 480 292 456 334 C448 348 440 360 428 372 C434 396 446 408 466 415 C551 445 611 520 621 660 Z" fill="#141414"/>
+    <ellipse cx="382" cy="130" rx="56" ry="42" fill="#141414"/>
+    <path d="M336 385 C372 442 424 442 452 382" fill="none" stroke="#D4AF37" stroke-width="5" stroke-linecap="round"/>
+    <path d="M346 400 C378 456 420 456 444 398" fill="none" stroke="#D4AF37" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+    <circle cx="398" cy="452" r="8" fill="#D4AF37"/>
+    <path d="M452 330 L456 352" stroke="#D4AF37" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="457" cy="362" r="6" fill="none" stroke="#D4AF37" stroke-width="3"/>
+    <path d="M310 300 C304 322 304 344 312 360" fill="none" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  </g>
+  <text x="800" y="836" font-family="Georgia, serif" font-size="30" fill="#B08C3D" text-anchor="middle" letter-spacing="10">V.CLOSET</text>
+</svg>
