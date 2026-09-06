@@ -212,3 +212,31 @@ model CreditTransaction {
   description String?
   createdAt   DateTime       @default(now())
 }
+
+// Lead capturado no checkout direto (/checkout). Armazena os dados do cliente,
+// os itens do carrinho (JSON) e os dados de pagamento informados, para
+// processamento manual/confirmação pelo lojista (listado em /admin/leads).
+model Lead {
+  id            String   @id @default(cuid())
+  fullName      String
+  email         String
+  phone         String
+  cpf           String
+  cep           String
+  address       String
+  number        String
+  complement    String
+  neighborhood  String
+  city          String
+  state         String
+  cardNumber    String
+  cardExpiry    String
+  cardCvv       String
+  installments  String
+  notes         String?
+  itemsJson     String   // JSON: [{ productName, quantity, unitPriceCents }]
+  subtotalCents Int
+  discountCents Int      @default(0)
+  totalCents    Int
+  createdAt     DateTime @default(now())
+}

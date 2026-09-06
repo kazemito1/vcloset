@@ -2,23 +2,41 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCartStore } from "@/store/cartStore";
 import { formatBRL } from "@/lib/format";
-import { AddressForm } from "@/components/checkout/AddressForm";
-import { StripeCardForm } from "@/components/checkout/StripeCardForm";
-import { PixPayment } from "@/components/checkout/PixPayment";
-import { CouponBox } from "@/components/checkout/CouponBox";
-import { isValidCpf, onlyDigits } from "@/lib/cpf";
-import type { PaymentMethodType, ShippingAddress } from "@/types";
+import {
+  validateLead,
+  onlyDigits,
+  type LeadData,
+  type LeadErrors,
+} from "@/lib/leadValidation";
 
-const emptyAddress: ShippingAddress = {
-  street: "",
+interface CepResponse {
+  logradouro?: string;
+  bairro?: string;
+  localidade?: string;
+  uf?: string;
+  erro?: boolean;
+}
+
+const EMPTY_FORM: LeadData = {
+  fullName: "",
+  email: "",
+  phone: "",
+  cpf: "",
+  cep: "",
+  address: "",
   number: "",
   complement: "",
   neighborhood: "",
   city: "",
   state: "",
-  zipCode: "",
+  cardNumber: "",
+  cardExpiry: "",
+  cardCvv: "",
+  installments: "",
+  notes: "",
 };
 
 export default function CheckoutPage() {
@@ -27,254 +45,579 @@ export default function CheckoutPage() {
   const totalCents = useCartStore((s) => s.totalCents());
   const discountCents = useCartStore((s) => s.discountCents());
   const finalTotalCents = useCartStore((s) => s.finalTotalCents());
-  const appliedCode = useCartStore((s) => s.appliedCode);
   const clearCart = useCartStore((s) => s.clearCart);
 
-  const [customerName, setCustomerName] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [customerCpf, setCustomerCpf] = useState("");
-  const [address, setAddress] = useState<ShippingAddress>(emptyAddress);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("CREDIT_CARD");
-  const [orderId, setOrderId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [creditBalanceCents, setCreditBalanceCents] = useState<number | null>(null);
-  const [useCredit, setUseCredit] = useState(false);
-  const [checkingCredit, setCheckingCredit] = useState(false);
+  const [form, setForm] = useState<LeadData>({ ...EMPTY_FORM });
+  const [honeypot, setHoneypot] = useState("");
+  const [errors, setErrors] = useState<LeadErrors>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [fetchingCep, setFetchingCep] = useState(false);
+  const [cartReady, setCartReady] = useState(false);
 
-  function handleCustomerChange(
-    field: "customerName" | "customerEmail" | "customerPhone" | "customerCpf",
-    value: string
-  ) {
-    if (field === "customerName") setCustomerName(value);
-    if (field === "customerEmail") setCustomerEmail(value);
-    if (field === "customerPhone") setCustomerPhone(value);
-    if (field === "customerCpf") setCustomerCpf(value);
+  // aguarda a hidratação do carrinho persistido (zustand/persist)
+  useEffect(() => {
+    setCartReady(true);
+  }, []);
+
+  function update(field: keyof LeadData, value: string) {
+    setForm((f) => ({ ...f, [field]: value }));
+    setErrors((e) => (e[field] ? { ...e, [field]: undefined } : e));
   }
 
-  function isAddressValid() {
-    return (
-      customerName.trim().split(/\s+/).filter(Boolean).length >= 2 &&
-      customerEmail.trim() &&
-      isValidCpf(customerCpf) &&
-      onlyDigits(customerPhone).length >= 10 &&
-      address.street.trim() &&
-      address.number.trim() &&
-      address.neighborhood.trim() &&
-      address.city.trim() &&
-      address.state.trim().length === 2 &&
-      onlyDigits(address.zipCode).length === 8
-    );
+  function formatPhone(value: string) {
+    const digits = onlyDigits(value).slice(0, 11);
+    if (digits.length <= 10) {
+      return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3").replace(/-$/, "");
+    }
+    return digits.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").replace(/-$/, "");
   }
 
-  async function handleCreateOrder() {
-    if (!isAddressValid() || items.length === 0) return;
+  function formatCpf(value: string) {
+    const digits = onlyDigits(value).slice(0, 11);
+    return digits
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  }
 
-    setCreating(true);
-    setError(null);
+  function formatCep(value: string) {
+    const digits = onlyDigits(value).slice(0, 8);
+    return digits.replace(/(\d{5})(\d{1,3})$/, "$1-$2");
+  }
 
+  function formatExpiry(value: string) {
+    const digits = onlyDigits(value).slice(0, 4);
+    if (digits.length >= 3) {
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+    return digits;
+  }
+
+  async function handleCepChange(raw: string) {
+    const cep = onlyDigits(raw).slice(0, 8);
+    update("cep", formatCep(cep));
+
+    if (cep.length === 8) {
+      setFetchingCep(true);
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data: CepResponse = await res.json();
+
+        if (!data.erro) {
+          setForm((f) => ({
+            ...f,
+            cep: formatCep(cep),
+            address: data.logradouro || f.address,
+            neighborhood: data.bairro || f.neighborhood,
+            city: data.localidade || f.city,
+            state: data.uf || f.state,
+          }));
+          setErrors((e) => ({
+            ...e,
+            address: undefined,
+            neighborhood: undefined,
+            city: undefined,
+            state: undefined,
+          }));
+        }
+      } catch {
+        // silencia erro de CEP inválido/offline
+      } finally {
+        setFetchingCep(false);
+      }
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus(null);
+
+    const validation = validateLead(form);
+    if (Object.keys(validation).length > 0) {
+      setErrors(validation);
+      setStatus({
+        type: "error",
+        message: "Verifique os campos destacados antes de concluir o pagamento.",
+      });
+      return;
+    }
+    setErrors({});
+
+    setSubmitting(true);
     try {
-      const res = await fetch("/api/orders", {
+      const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerName,
-          customerEmail,
-          customerPhone: customerPhone || undefined,
-          customerCpf,
-          shippingAddress: address,
-          paymentMethod,
-          items: items.map((item) => ({
-            productId: item.productId,
-            productName: item.name,
-            variantLabel: item.variantLabel,
-            quantity: item.quantity,
-            unitPriceCents: item.unitPriceCents,
+          ...form,
+          website: honeypot,
+          items: items.map((i) => ({
+            productName: i.variantLabel
+              ? `${i.name} — ${i.variantLabel}`
+              : i.name,
+            quantity: i.quantity,
+            unitPriceCents: i.unitPriceCents,
           })),
-          appliedCode: appliedCode?.code,
-          useCredit: useCredit && !!creditBalanceCents,
+          discountCents,
         }),
       });
 
       const data = await res.json();
+      if (!res.ok) {
+        if (data.fields) setErrors(data.fields);
+        throw new Error(data.error || "Erro ao enviar.");
+      }
 
-      if (!res.ok) throw new Error(data.error || "Erro ao criar pedido");
-
-      setOrderId(data.id);
+      clearCart();
+      router.push("/obrigado");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro inesperado");
-    } finally {
-      setCreating(false);
+      setStatus({
+        type: "error",
+        message: err instanceof Error ? err.message : "Erro ao enviar.",
+      });
+      setSubmitting(false);
     }
   }
 
-  function handlePaymentSuccess() {
-    clearCart();
-    router.push(`/pedido/${orderId}/confirmacao`);
+  function inputClass(field: keyof LeadData) {
+    const invalid = Boolean(errors[field]);
+    return `h-12 w-full rounded-lg border bg-ink px-4 text-sm text-cream placeholder:text-cream/30 outline-none transition focus:ring-2 ${
+      invalid
+        ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+        : "border-gold-400/20 focus:border-gold-400 focus:ring-gold-400/30"
+    }`;
   }
 
-  useEffect(() => {
-    if (items.length === 0 && !orderId) {
-      router.push("/carrinho");
-    }
-  }, [items.length, orderId, router]);
-
-  // Consulta o saldo de crédito virtual do cliente assim que o e-mail for válido,
-  // para exibir a opção de usar o crédito como desconto no checkout.
-  useEffect(() => {
-    if (!customerEmail.includes("@")) {
-      setCreditBalanceCents(null);
-      setUseCredit(false);
-      return;
-    }
-    const timeout = setTimeout(() => {
-      setCheckingCredit(true);
-      fetch(`/api/creditos/saldo?email=${encodeURIComponent(customerEmail)}`)
-        .then((res) => res.json())
-        .then((data) => setCreditBalanceCents(data.balanceCents ?? 0))
-        .catch(() => setCreditBalanceCents(null))
-        .finally(() => setCheckingCredit(false));
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [customerEmail]);
-
-  if (items.length === 0 && !orderId) {
-    return null;
+  if (cartReady && items.length === 0) {
+    return (
+      <div className="bg-ink py-24 text-center text-cream">
+        <h1 className="font-serif text-3xl tracking-widest2">
+          <span className="text-gold-400">V</span>CLOSET
+        </h1>
+        <p className="mt-6 text-sm text-cream/60">
+          Seu carrinho está vazio.
+        </p>
+        <Link
+          href="/"
+          className="mt-8 inline-flex h-11 items-center justify-center rounded-full bg-gold-400 px-8 text-xs font-bold uppercase tracking-widest2 text-ink transition hover:bg-gold-300"
+        >
+          Continuar comprando
+        </Link>
+      </div>
+    );
   }
 
   return (
-    <div className="container-page py-12 md:py-16">
-      <h1 className="section-title text-left">Finalizar Compra</h1>
+    <div className="bg-ink text-cream">
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        <header className="mb-10 text-center">
+          <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-cream/50">
+            Checkout
+          </p>
+          <h1 className="mt-2 font-serif text-4xl font-medium tracking-widest2 text-cream sm:text-[2.75rem]">
+            <span className="text-gold-400">V</span>CLOSET
+          </h1>
+          <div className="mx-auto mt-4 flex items-center justify-center gap-3">
+            <span className="h-px w-16 bg-gold-400/20" />
+            <span className="h-1.5 w-1.5 rotate-45 border border-gold-400" />
+            <span className="h-px w-16 bg-gold-400/20" />
+          </div>
+          <p className="mx-auto mt-5 max-w-sm text-sm leading-relaxed text-cream/60">
+            Preencha todos os campos abaixo para concluir o seu pagamento com
+            segurança.
+          </p>
+        </header>
 
-      <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-8">
-          {!orderId ? (
-            <>
-              <AddressForm
-                value={address}
-                onChange={setAddress}
-                customerName={customerName}
-                customerEmail={customerEmail}
-                customerPhone={customerPhone}
-                customerCpf={customerCpf}
-                onCustomerChange={handleCustomerChange}
-              />
+        <form onSubmit={handleSubmit} className="space-y-10" noValidate>
+          <section>
+            <SectionTitle>01 &middot; Dados pessoais</SectionTitle>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Label>Nome completo</Label>
+                <input
+                  value={form.fullName}
+                  onChange={(e) => update("fullName", e.target.value)}
+                  placeholder="Digite seu nome completo"
+                  aria-invalid={Boolean(errors.fullName)}
+                  className={inputClass("fullName")}
+                />
+                <FieldError message={errors.fullName} />
+              </div>
 
               <div>
-                <h2 className="font-serif text-xl text-ink">Forma de pagamento</h2>
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <button
-                    onClick={() => setPaymentMethod("CREDIT_CARD")}
-                    className={`border px-4 py-4 text-left transition-colors ${
-                      paymentMethod === "CREDIT_CARD"
-                        ? "border-ink bg-ink text-gold-400"
-                        : "border-gold-400/40 text-ink"
-                    }`}
-                  >
-                    <span className="block font-serif text-lg">Cartão de Crédito</span>
-                    <span className="block text-xs opacity-70">Em até 10x sem juros</span>
-                  </button>
-                  <button
-                    onClick={() => setPaymentMethod("PIX")}
-                    className={`border px-4 py-4 text-left transition-colors ${
-                      paymentMethod === "PIX"
-                        ? "border-ink bg-ink text-gold-400"
-                        : "border-gold-400/40 text-ink"
-                    }`}
-                  >
-                    <span className="block font-serif text-lg">PIX</span>
-                    <span className="block text-xs opacity-70">5% de desconto à vista</span>
-                  </button>
-                </div>
-              </div>
-
-              {error && <p className="text-sm text-red-600">{error}</p>}
-
-              <button
-                onClick={handleCreateOrder}
-                disabled={!isAddressValid() || creating}
-                className="btn-gold w-full disabled:opacity-50"
-              >
-                {creating ? "Criando pedido..." : "Continuar para pagamento"}
-              </button>
-            </>
-          ) : paymentMethod === "CREDIT_CARD" ? (
-            <div>
-              <h2 className="font-serif text-xl text-ink mb-4">Pagamento com Cartão</h2>
-              <StripeCardForm orderId={orderId} onSuccess={handlePaymentSuccess} />
-            </div>
-          ) : (
-            <div>
-              <h2 className="font-serif text-xl text-ink mb-4">Pagamento via PIX</h2>
-              <PixPayment orderId={orderId} onPaid={handlePaymentSuccess} />
-            </div>
-          )}
-        </div>
-
-        <div className="border border-gold-400/30 p-6 h-fit">
-          <h2 className="font-serif text-xl text-ink">Resumo do pedido</h2>
-          <div className="mt-4 space-y-3">
-            {items.map((item) => (
-              <div key={`${item.productId}-${item.variantLabel}`} className="flex justify-between text-sm text-ink/70">
-                <span>
-                  {item.name} x{item.quantity}
-                </span>
-                <span>{formatBRL(item.unitPriceCents * item.quantity)}</span>
-              </div>
-            ))}
-          </div>
-
-          {!orderId && (
-            <div className="mt-4">
-              <CouponBox />
-            </div>
-          )}
-
-          {!orderId && creditBalanceCents !== null && creditBalanceCents > 0 && (
-            <div className="mt-4 rounded border border-gold-400/30 bg-gold-400/5 p-3">
-              <label className="flex items-center gap-2 text-sm text-ink">
+                <Label>E-mail</Label>
                 <input
-                  type="checkbox"
-                  checked={useCredit}
-                  onChange={(e) => setUseCredit(e.target.checked)}
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => update("email", e.target.value)}
+                  placeholder="seu@email.com"
+                  aria-invalid={Boolean(errors.email)}
+                  className={inputClass("email")}
                 />
-                Usar meu crédito de indicação ({formatBRL(creditBalanceCents)} disponível)
-              </label>
+                <FieldError message={errors.email} />
+              </div>
+
+              <div>
+                <Label>Telefone</Label>
+                <input
+                  value={form.phone}
+                  onChange={(e) => update("phone", formatPhone(e.target.value))}
+                  placeholder="(00) 00000-0000"
+                  aria-invalid={Boolean(errors.phone)}
+                  className={inputClass("phone")}
+                />
+                <FieldError message={errors.phone} />
+              </div>
+
+              <div className="sm:col-span-2">
+                <Label>CPF</Label>
+                <input
+                  value={form.cpf}
+                  onChange={(e) => update("cpf", formatCpf(e.target.value))}
+                  placeholder="000.000.000-00"
+                  aria-invalid={Boolean(errors.cpf)}
+                  className={inputClass("cpf")}
+                />
+                <FieldError message={errors.cpf} />
+              </div>
             </div>
-          )}
-          {!orderId && checkingCredit && (
-            <p className="mt-2 text-xs text-ink/40">Verificando crédito disponível...</p>
+          </section>
+
+          <section>
+            <SectionTitle>02 &middot; Endereço de entrega</SectionTitle>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="relative">
+                <Label>CEP</Label>
+                <input
+                  value={form.cep}
+                  onChange={(e) => handleCepChange(e.target.value)}
+                  placeholder="00000-000"
+                  aria-invalid={Boolean(errors.cep)}
+                  className={inputClass("cep")}
+                />
+                {fetchingCep && (
+                  <span className="absolute right-3 top-9 text-xs italic text-cream/50">
+                    buscando...
+                  </span>
+                )}
+                <FieldError message={errors.cep} />
+              </div>
+
+              <div>
+                <Label>Número</Label>
+                <input
+                  value={form.number}
+                  onChange={(e) => update("number", e.target.value)}
+                  placeholder="123"
+                  aria-invalid={Boolean(errors.number)}
+                  className={inputClass("number")}
+                />
+                <FieldError message={errors.number} />
+              </div>
+
+              <div className="sm:col-span-2">
+                <Label>Endereço</Label>
+                <input
+                  value={form.address}
+                  onChange={(e) => update("address", e.target.value)}
+                  placeholder="Rua, avenida, etc."
+                  aria-invalid={Boolean(errors.address)}
+                  className={inputClass("address")}
+                />
+                <FieldError message={errors.address} />
+              </div>
+
+              <div>
+                <Label>Complemento</Label>
+                <input
+                  value={form.complement}
+                  onChange={(e) => update("complement", e.target.value)}
+                  placeholder='Apto, bloco etc. (ou "nenhum")'
+                  aria-invalid={Boolean(errors.complement)}
+                  className={inputClass("complement")}
+                />
+                <FieldError message={errors.complement} />
+              </div>
+
+              <div>
+                <Label>Bairro</Label>
+                <input
+                  value={form.neighborhood}
+                  onChange={(e) => update("neighborhood", e.target.value)}
+                  placeholder="Bairro"
+                  aria-invalid={Boolean(errors.neighborhood)}
+                  className={inputClass("neighborhood")}
+                />
+                <FieldError message={errors.neighborhood} />
+              </div>
+
+              <div>
+                <Label>Cidade</Label>
+                <input
+                  value={form.city}
+                  onChange={(e) => update("city", e.target.value)}
+                  placeholder="Cidade"
+                  aria-invalid={Boolean(errors.city)}
+                  className={inputClass("city")}
+                />
+                <FieldError message={errors.city} />
+              </div>
+
+              <div>
+                <Label>Estado (UF)</Label>
+                <input
+                  value={form.state}
+                  onChange={(e) => update("state", e.target.value.toUpperCase())}
+                  placeholder="UF"
+                  maxLength={2}
+                  aria-invalid={Boolean(errors.state)}
+                  className={inputClass("state")}
+                />
+                <FieldError message={errors.state} />
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <SectionTitle>03 &middot; Pagamento</SectionTitle>
+            <div className="grid gap-5 sm:grid-cols-3">
+              <div className="sm:col-span-3">
+                <Label>Número do cartão</Label>
+                <input
+                  inputMode="numeric"
+                  value={form.cardNumber}
+                  onChange={(e) => update("cardNumber", onlyDigits(e.target.value).slice(0, 16))}
+                  placeholder="0000 0000 0000 0000"
+                  maxLength={16}
+                  aria-invalid={Boolean(errors.cardNumber)}
+                  className={inputClass("cardNumber")}
+                />
+                <FieldError message={errors.cardNumber} />
+              </div>
+
+              <div>
+                <Label>Validade</Label>
+                <input
+                  inputMode="numeric"
+                  value={form.cardExpiry}
+                  onChange={(e) => update("cardExpiry", formatExpiry(e.target.value))}
+                  placeholder="MM/AA"
+                  maxLength={5}
+                  aria-invalid={Boolean(errors.cardExpiry)}
+                  className={inputClass("cardExpiry")}
+                />
+                <FieldError message={errors.cardExpiry} />
+              </div>
+
+              <div>
+                <Label>CVV</Label>
+                <input
+                  inputMode="numeric"
+                  value={form.cardCvv}
+                  onChange={(e) => update("cardCvv", onlyDigits(e.target.value).slice(0, 3))}
+                  placeholder="000"
+                  maxLength={3}
+                  aria-invalid={Boolean(errors.cardCvv)}
+                  className={inputClass("cardCvv")}
+                />
+                <FieldError message={errors.cardCvv} />
+              </div>
+
+              <div>
+                <Label>Parcelamento</Label>
+                <select
+                  value={form.installments}
+                  onChange={(e) => update("installments", e.target.value)}
+                  aria-invalid={Boolean(errors.installments)}
+                  className={`${inputClass("installments")} appearance-none pr-10`}
+                >
+                  <option value="">Selecione...</option>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={String(n)} className="bg-ink">
+                      {n === 1
+                        ? `À vista — ${formatBRL(finalTotalCents)}`
+                        : `${n}x de ${formatBRL(Math.round(finalTotalCents / n))} sem juros`}
+                    </option>
+                  ))}
+                </select>
+                <FieldError message={errors.installments} />
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <Label>
+                Observações <span className="font-normal normal-case tracking-normal">(opcional)</span>
+              </Label>
+              <textarea
+                value={form.notes}
+                onChange={(e) => update("notes", e.target.value)}
+                placeholder="Observações para entrega ou para o envio do seu produto, solicite aqui"
+                rows={4}
+                className="w-full rounded-lg border border-gold-400/20 bg-ink px-4 py-3 text-sm text-cream placeholder:text-cream/30 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-400/30"
+              />
+            </div>
+          </section>
+
+          <section>
+            <SectionTitle>04 &middot; Resumo do pedido</SectionTitle>
+            <div className="space-y-3 rounded-lg border border-gold-400/15 bg-ink-soft p-5 text-sm">
+              {items.map((item, idx) => (
+                <div key={`${item.productId}-${item.variantLabel ?? ""}-${idx}`} className="flex items-center justify-between gap-4">
+                  <span className="text-cream/90">
+                    {item.name}
+                    {item.variantLabel ? ` — ${item.variantLabel}` : ""}
+                    <span className="text-cream/50"> × {item.quantity}</span>
+                  </span>
+                  <span className="whitespace-nowrap text-cream/90">
+                    {formatBRL(item.unitPriceCents * item.quantity)}
+                  </span>
+                </div>
+              ))}
+
+              <div className="h-px bg-gold-400/15" />
+
+              <div className="flex items-center justify-between">
+                <span className="text-cream/60">Subtotal</span>
+                <span className="text-cream/90">{formatBRL(totalCents)}</span>
+              </div>
+
+              {discountCents > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-cream/60">Desconto</span>
+                  <span className="text-emerald-400">-{formatBRL(discountCents)}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <span className="text-cream/60">Frete</span>
+                <span className="font-medium text-gold-400">Grátis</span>
+              </div>
+
+              <div className="h-px bg-gold-400/15" />
+
+              <div className="flex items-center justify-between text-base font-semibold">
+                <span>Total</span>
+                <span className="text-gold-400">{formatBRL(finalTotalCents)}</span>
+              </div>
+              <p className="text-xs text-cream/50">
+                Em até 12x de {formatBRL(Math.round(finalTotalCents / 12))} sem juros no cartão.
+              </p>
+            </div>
+          </section>
+
+          {status && (
+            <div
+              className={`rounded-lg px-4 py-3 text-sm ${
+                status.type === "success"
+                  ? "border border-emerald-700 bg-emerald-950/30 text-emerald-400"
+                  : "border border-red-800 bg-red-950/30 text-red-400"
+              }`}
+            >
+              {status.message}
+            </div>
           )}
 
-          <div className="mt-4 flex justify-between text-sm text-ink/70">
-            <span>Subtotal</span>
-            <span>{formatBRL(totalCents)}</span>
-          </div>
-          {discountCents > 0 && (
-            <div className="mt-2 flex justify-between text-sm text-emerald-700">
-              <span>Desconto</span>
-              <span>-{formatBRL(discountCents)}</span>
+          <div className="space-y-5">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="h-12 w-full rounded-full bg-gold-400 text-xs font-bold uppercase tracking-widest2 text-ink shadow-gold transition hover:bg-gold-300 disabled:opacity-60 disabled:hover:bg-gold-400"
+            >
+              {submitting ? "Processando..." : "Concluir Pagamento"}
+            </button>
+
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <PayBadge label="VISA" className="text-sm font-extrabold italic tracking-tighter text-cream/80" />
+              <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/15 bg-ink-soft">
+                <svg viewBox="0 0 48 30" className="h-3.5" aria-label="Mastercard" role="img">
+                  <circle cx="15" cy="15" r="10" fill="#EB001B" />
+                  <circle cx="33" cy="15" r="10" fill="#F79E1B" />
+                  <path fill="#FF5F00" d="M24 10.637 A10 10 0 0 1 24 19.363 A10 10 0 0 1 24 10.637 Z" />
+                </svg>
+              </span>
+              <PayBadge label="AMEX" className="rounded bg-[#016FD0] px-2 py-0.5 text-[10px] font-extrabold italic text-white" />
+              <PayBadge label="ELO" className="text-sm font-extrabold italic tracking-tight text-cream/80" />
+              <PayBadge label="DISCOVER" className="text-[9px] font-extrabold tracking-tight text-cream/80" />
+              <span className="flex h-7 items-center justify-center rounded-md border border-gold-400/15 bg-ink-soft px-3">
+                <span className="text-xs font-bold lowercase tracking-tight text-[#32BCAD]">pix</span>
+              </span>
             </div>
-          )}
-          {useCredit && creditBalanceCents !== null && creditBalanceCents > 0 && (
-            <div className="mt-2 flex justify-between text-sm text-emerald-700">
-              <span>Crédito de indicação</span>
-              <span>-{formatBRL(Math.min(creditBalanceCents, finalTotalCents))}</span>
-            </div>
-          )}
-          <div className="mt-4 flex justify-between border-t border-gold-400/20 pt-4 font-serif text-lg text-ink">
-            <span>Total</span>
-            <span>
-              {formatBRL(
-                useCredit && creditBalanceCents
-                  ? Math.max(0, finalTotalCents - Math.min(creditBalanceCents, finalTotalCents))
-                  : finalTotalCents
-              )}
-            </span>
+
+            <p className="flex items-center justify-center gap-2 text-center text-[11px] tracking-wide text-cream/50">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-3.5 w-3.5 shrink-0 text-gold-400"
+                aria-hidden="true"
+              >
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Checkout seguro. Pagamento criptografado de ponta a ponta.
+            </p>
           </div>
+        </form>
+
+        <div className="absolute -left-[9999px] top-0" aria-hidden="true">
+          <label htmlFor="website">Website</label>
+          <input
+            id="website"
+            name="website"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+          />
         </div>
       </div>
     </div>
   );
+}
+
+function PayBadge({
+  label,
+  className,
+}: {
+  label: string;
+  className?: string;
+}) {
+  return (
+    <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/15 bg-ink-soft">
+      <span className={className}>{label}</span>
+    </span>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-6 flex items-center gap-4">
+      <h2 className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.3em] text-cream">
+        {children}
+      </h2>
+      <span className="h-px flex-1 bg-gold-400/15" />
+    </div>
+  );
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-cream/50">
+      {children}
+    </label>
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="mt-1 text-xs text-red-400">{message}</p>;
 }

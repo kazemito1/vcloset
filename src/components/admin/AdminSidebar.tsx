@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { label: "Categorias", href: "/admin/categorias", superAdminOnly: false },
   { label: "Estoque", href: "/admin/estoque", superAdminOnly: false },
   { label: "Pedidos", href: "/admin/pedidos", superAdminOnly: false },
+  { label: "Leads do Checkout", href: "/admin/leads", superAdminOnly: false },
   { label: "Cupons", href: "/admin/cupons", superAdminOnly: false },
   { label: "Indicações", href: "/admin/indicacoes", superAdminOnly: false },
   { label: "Relatórios", href: "/admin/relatorios", superAdminOnly: false },
