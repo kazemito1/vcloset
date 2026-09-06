@@ -12,6 +12,9 @@ interface Slide {
   // Imagem de fundo editorial (opcional). Quando presente, o slide mostra a
   // imagem em tela cheia com um véu claro para manter o texto legível.
   image?: string;
+  // Vídeo de fundo editorial (opcional). Tem precedência sobre a imagem.
+  // Deve ser um arquivo MP4/WebM hospedado em /videos/ ou URL externa.
+  video?: string;
 }
 
 const SLIDES: Slide[] = [
@@ -31,6 +34,24 @@ const SLIDES: Slide[] = [
     ctaLabel: "Ver joias",
     ctaHref: "/categorias/colares",
     image: "/images/editorial-joias.jpg",
+  },
+  {
+    eyebrow: "Moda Feminina",
+    title: "Trajes que Empoderam",
+    subtitle:
+      "Descubra a nova categoria Trajes Femininos com peças inspiradas no design sofisticado da AMARO.",
+    ctaLabel: "Ver trajes femininos",
+    ctaHref: "/categorias/trajes-femininos",
+    image: "/images/hero-moda-inverno.png",
+  },
+  {
+    eyebrow: "Inspiração",
+    title: "Joias + Roupas",
+    subtitle:
+      "Combine nossas joias com as novas peças de trajes femininos para criar looks elegantes e atemporais.",
+    ctaLabel: "Explorar looks",
+    ctaHref: "/categorias/trajes-femininos",
+    image: "/images/hero-estilo-completo.png",
   },
   {
     eyebrow: "Novidades",
@@ -71,17 +92,30 @@ export function HeroCarousel() {
   }
 
   const slide = SLIDES[active];
+  const hasMedia = Boolean(slide.image || slide.video);
 
   return (
     <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden bg-neutral-50 text-ink">
-      {slide.image && (
+      {hasMedia && (
         <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={slide.image}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          {slide.video ? (
+            // eslint-disable-next-line jsx-a11y/media-has-caption
+            <video
+              src={slide.video}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : slide.image ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={slide.image}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : null}
           <div className="absolute inset-0 bg-gradient-to-r from-neutral-50 via-neutral-50/75 to-neutral-50/15" />
         </>
       )}

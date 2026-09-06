@@ -1,11 +1,12 @@
 export const CATEGORIES = [
-  { name: "Anéis", slug: "aneis", image: "/products/placeholder-aneis.svg" },
-  { name: "Colares", slug: "colares", image: "/products/placeholder-colares.svg" },
-  { name: "Brincos", slug: "brincos", image: "/products/placeholder-brincos.svg" },
-  { name: "Pulseiras", slug: "pulseiras", image: "/products/placeholder-pulseiras.svg" },
-  { name: "Relógios", slug: "relogios", image: "/products/placeholder-relogios.svg" },
-  { name: "Alianças", slug: "aliancas", image: "/products/placeholder-aliancas.svg" },
-  { name: "Acessórios", slug: "acessorios", image: "/products/placeholder-acessorios.svg" },
+  { name: "Anéis", slug: "aneis", image: "/products/category-aneis.png" },
+  { name: "Colares", slug: "colares", image: "/products/category-colares.png" },
+  { name: "Brincos", slug: "brincos", image: "/products/category-brincos.png" },
+  { name: "Pulseiras", slug: "pulseiras", image: "/products/category-pulseiras.png" },
+  { name: "Relógios", slug: "relogios", image: "/products/category-relogios.png" },
+  { name: "Alianças", slug: "aliancas", image: "/products/category-aliancas.png" },
+  { name: "Acessórios", slug: "acessorios", image: "/products/category-acessorios.png" },
+  { name: "Trajes Femininos", slug: "trajes-femininos", image: "/products/category-trajes-femininos.png" },
 ];
 
 // Estrutura de navegação do header, agrupando as categorias em seções
@@ -19,6 +20,7 @@ export type NavGroup =
 
 export const NAV_GROUPS: NavGroup[] = [
   { label: "Joias", type: "dropdown", slugs: ["aneis", "colares", "brincos", "pulseiras"] },
+  { label: "Trajes Femininos", type: "link", slug: "trajes-femininos" },
   { label: "Relógios", type: "link", slug: "relogios" },
   { label: "Acessórios", type: "link", slug: "acessorios" },
 ];
