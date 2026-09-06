@@ -109,14 +109,6 @@ export function Header({ settings }: HeaderProps) {
           })}
 
           <Link
-            href="/sobre"
-            className={`text-sm uppercase tracking-wide transition-colors hover:text-gold-600 ${
-              pathname === "/sobre" ? "text-gold-600" : "text-ink"
-            }`}
-          >
-            Sobre
-          </Link>
-          <Link
             href="/contato"
             className={`text-sm uppercase tracking-wide transition-colors hover:text-gold-600 ${
               pathname === "/contato" ? "text-gold-600" : "text-ink"
@@ -220,13 +212,6 @@ export function Header({ settings }: HeaderProps) {
             );
           })}
 
-          <Link
-            href="/sobre"
-            onClick={() => setMenuOpen(false)}
-            className="py-2 text-sm uppercase tracking-wide text-ink"
-          >
-            Sobre
-          </Link>
           <Link
             href="/contato"
             onClick={() => setMenuOpen(false)}

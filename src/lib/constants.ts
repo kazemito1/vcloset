@@ -19,12 +19,8 @@ export type NavGroup =
 
 export const NAV_GROUPS: NavGroup[] = [
   { label: "Joias", type: "dropdown", slugs: ["aneis", "colares", "brincos", "pulseiras"] },
-  { label: "Casamento", type: "dropdown", slugs: ["aliancas"] },
   { label: "Relógios", type: "link", slug: "relogios" },
   { label: "Acessórios", type: "link", slug: "acessorios" },
-  { label: "Masculino", type: "link", slug: "masculino", href: "/masculino" },
-  { label: "Presentes", type: "link", slug: "presentes", href: "/presentes" },
-  { label: "Sale", type: "link", slug: "sale", href: "/sale" },
 ];
 
 export const STORE_NAME = "V.CLOSET";

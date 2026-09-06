@@ -49,9 +49,6 @@ export function Footer({ settings }: FooterProps) {
           <h4 className="mb-4 text-sm uppercase tracking-widest2 text-gold-400">Institucional</h4>
           <ul className="space-y-2 text-sm text-cream/70">
             <li>
-              <Link href="/sobre" className="hover:text-gold-400">Sobre nós</Link>
-            </li>
-            <li>
               <Link href="/contato" className="hover:text-gold-400">Contato</Link>
             </li>
             <li>
