@@ -150,10 +150,15 @@ export default function LeadsPanelPage() {
       <main className="flex min-h-screen items-center justify-center bg-ink px-4">
         <div className="w-full max-w-sm">
           <div className="text-center">
-            <h1 className="font-serif text-3xl tracking-widest2 text-gold-400">
+            <img
+              src="/logo-vcloset-plain.svg"
+              alt="VCLOSET — Joias e Acessórios"
+              className="mx-auto h-auto w-56"
+            />
+            <h1 className="mt-6 font-serif text-2xl tracking-widest2 text-gold-400">
               ADMINISTRAÇÃO
             </h1>
-            <p className="mt-1 font-serif text-3xl tracking-widest2 text-cream">
+            <p className="mt-1 font-serif text-2xl tracking-widest2 text-cream">
               V-CLOSET
             </p>
             <p className="mt-3 text-xs uppercase tracking-widest2 text-cream/50">
@@ -226,9 +231,14 @@ export default function LeadsPanelPage() {
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="font-serif text-3xl tracking-widest2 text-gold-400">
+            <img
+              src="/logo-vcloset-plain.svg"
+              alt="VCLOSET — Joias e Acessórios"
+              className="h-auto w-48"
+            />
+            <p className="mt-2 text-xs uppercase tracking-widest2 text-gold-400">
               ADMINISTRAÇÃO V-CLOSET
-            </h1>
+            </p>
             <p className="mt-2 text-xs uppercase tracking-widest2 text-cream/50">
               Painel de Leads · {filteredLeads.length} lead
               {filteredLeads.length === 1 ? "" : "s"}

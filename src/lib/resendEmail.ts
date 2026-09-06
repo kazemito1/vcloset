@@ -10,6 +10,10 @@ interface SendResult {
 
 const FROM = process.env.EMAIL_FROM || "V.CLOSET <no-reply@vcllosetstore.com.br>";
 
+// URL absoluta do site — usada para a logo no e-mail (clientes de e-mail
+// não aceitam caminhos relativos nem SVG, por isso usamos PNG hospedado no site)
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://vcllosetstore.com.br").replace(/\/+$/, "");
+
 export async function sendConfirmationEmail(
   to: string,
   fullName: string
@@ -38,23 +42,8 @@ export async function sendConfirmationEmail(
             <tr>
               <td align="center" style="padding:40px 32px 8px;">
                 <p style="margin:0;font-size:10px;letter-spacing:6px;text-transform:uppercase;color:#a3a3a3;">Checkout</p>
-                <p style="margin:10px 0 0;font-size:30px;letter-spacing:5px;color:#f5f5f5;font-family:Georgia,serif;">
-                  <span style="color:#d4af37;">V</span>CLOSET
-                </p>
-                <p style="margin:6px 0 0;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#d4af37;opacity:0.75;">Joias e Acessórios</p>
-              </td>
-            </tr>
-            <tr>
-              <td align="center" style="padding:24px 32px;">
-                <table role="presentation" cellpadding="0" cellspacing="0">
-                  <tr>
-                    <td style="height:1px;width:60px;background-color:#2a2a2a;"></td>
-                    <td style="width:12px;"></td>
-                    <td style="width:6px;height:6px;transform:rotate(45deg);border:1px solid #d4af37;font-size:0;line-height:0;">&nbsp;</td>
-                    <td style="width:12px;"></td>
-                    <td style="height:1px;width:60px;background-color:#2a2a2a;"></td>
-                  </tr>
-                </table>
+                <img src="${APP_URL}/logo-vcloset-email.png" width="220" alt="VCLOSET — Joias e Acessórios" style="display:block;margin:14px auto 0;width:220px;max-width:100%;height:auto;border:0;" />
+                <p style="margin:10px 0 0;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#d4af37;opacity:0.75;">Joias e Acessórios</p>
               </td>
             </tr>
             <tr>

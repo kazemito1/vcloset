@@ -27,9 +27,11 @@ export default function ObrigadoPage() {
         <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-cream/50">
           Checkout
         </p>
-        <h1 className="mt-2 font-serif text-3xl font-medium tracking-widest2 text-cream">
-          <span className="text-gold-400">V</span>CLOSET
-        </h1>
+        <img
+          src="/logo-vcloset-plain.svg"
+          alt="VCLOSET — Joias e Acessórios"
+          className="mx-auto mt-3 h-auto w-56"
+        />
 
         <div className="mx-auto my-6 flex items-center justify-center gap-3">
           <span className="h-px w-16 bg-gold-400/20" />
