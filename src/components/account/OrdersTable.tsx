@@ -1,0 +1,132 @@
+import { ORDER_STATUS_LABEL, type OrderStatus } from "@/lib/orderStatus";
+
+interface OrderItem {
+  productName: string;
+  quantity: number;
+  unitPriceCents: number;
+}
+
+export interface OrderRow {
+  id: string;
+  fullName: string;
+  createdAt: string;
+  itemsJson: string;
+  subtotalCents: number;
+  discountCents: number;
+  totalCents: number;
+  installments: string;
+  status: OrderStatus;
+}
+
+function formatBRL(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+function statusBadgeClass(status: OrderStatus): string {
+  switch (status) {
+    case "ENVIADO":
+      return "border-sky-400/40 bg-sky-400/10 text-sky-300";
+    case "PAGO":
+      return "border-emerald-400/40 bg-emerald-400/10 text-emerald-300";
+    default:
+      return "border-amber-400/40 bg-amber-400/10 text-amber-300";
+  }
+}
+
+export function OrdersTable({ orders }: { orders: OrderRow[] }) {
+  if (orders.length === 0) {
+    return (
+      <p className="rounded-lg border border-gold-400/15 bg-ink-soft py-8 text-center text-sm text-cream/50">
+        Você ainda não fez nenhum pedido.
+      </p>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-lg border border-gold-400/15 bg-ink-soft">
+      <table className="w-full min-w-[640px] border-collapse text-sm">
+        <thead>
+          <tr>
+            <th className="bg-ink px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest2 text-cream/50">
+              Pedido
+            </th>
+            <th className="bg-ink px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest2 text-cream/50">
+              Produto(s)
+            </th>
+            <th className="bg-ink px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest2 text-cream/50">
+              Status
+            </th>
+            <th className="bg-ink px-4 py-3 text-right text-[10px] font-bold uppercase tracking-widest2 text-cream/50">
+              Valor
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((order) => {
+            let items: OrderItem[] = [];
+            try {
+              items = JSON.parse(order.itemsJson) as OrderItem[];
+            } catch {
+              items = [];
+            }
+
+            return (
+              <tr key={order.id} className="border-t border-gold-400/10 align-top">
+                <td className="px-4 py-4">
+                  <p className="font-semibold text-cream">
+                    #{order.id.slice(-6).toUpperCase()}
+                  </p>
+                  <p className="mt-0.5 text-xs text-cream/50">
+                    {new Date(order.createdAt).toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </p>
+                </td>
+                <td className="px-4 py-4 text-cream/80">
+                  {items.length === 0 ? (
+                    <span className="text-cream/40">—</span>
+                  ) : (
+                    <ul className="space-y-1">
+                      {items.map((item, idx) => (
+                        <li key={idx}>
+                          {item.productName}
+                          {item.quantity > 1 ? ` (×${item.quantity})` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </td>
+                <td className="px-4 py-4">
+                  <span
+                    className={`inline-block whitespace-nowrap rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 ${statusBadgeClass(order.status)}`}
+                  >
+                    {ORDER_STATUS_LABEL[order.status]}
+                  </span>
+                </td>
+                <td className="px-4 py-4 text-right">
+                  <p className="font-bold text-gold-400">
+                    {formatBRL(order.totalCents)}
+                  </p>
+                  {order.discountCents > 0 && (
+                    <p className="mt-0.5 text-[11px] text-emerald-400">
+                      Desconto: -{formatBRL(order.discountCents)}
+                    </p>
+                  )}
+                  <p className="mt-0.5 text-[11px] text-cream/40">
+                    {order.installments}
+                    {order.installments === "1" ? "x (à vista)" : "x sem juros"}
+                  </p>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}

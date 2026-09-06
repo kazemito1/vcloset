@@ -2,32 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ORDER_STATUS_LABEL, type OrderStatus } from "@/lib/orderStatus";
+import { OrdersTable, type OrderRow } from "@/components/account/OrdersTable";
 
-interface OrderItem {
-  productName: string;
-  quantity: number;
-  unitPriceCents: number;
-}
-
-interface Order {
-  id: string;
-  fullName: string;
-  createdAt: string;
-  itemsJson: string;
-  subtotalCents: number;
-  discountCents: number;
-  totalCents: number;
-  installments: string;
-  status: OrderStatus;
-}
-
-function formatBRL(cents: number): string {
-  return (cents / 100).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
+type Order = OrderRow;
 
 export default function PedidosPage() {
   const [email, setEmail] = useState("");
@@ -75,7 +52,7 @@ export default function PedidosPage() {
 
   return (
     <div className="bg-ink py-16 text-cream">
-      <div className="mx-auto max-w-2xl px-4 sm:px-6">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
         <header className="text-center">
           <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-cream/50">
             Acompanhamento
@@ -137,71 +114,7 @@ export default function PedidosPage() {
                   : "Nenhum pedido encontrado para este e-mail."}
               </p>
             ) : (
-              <div className="space-y-4">
-                {orders.map((order) => {
-                  let items: OrderItem[] = [];
-                  try {
-                    items = JSON.parse(order.itemsJson) as OrderItem[];
-                  } catch {
-                    items = [];
-                  }
-
-                  return (
-                    <div
-                      key={order.id}
-                      className="rounded-lg border border-gold-400/15 bg-ink-soft p-5"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-cream">
-                            Pedido #{order.id.slice(-6).toUpperCase()}
-                          </p>
-                          <p className="text-xs text-cream/50">
-                            {new Date(order.createdAt).toLocaleString("pt-BR")}
-                          </p>
-                        </div>
-                        <span
-                          className={`inline-block rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 ${
-                            order.status === "ENVIADO"
-                              ? "border-sky-400/40 bg-sky-400/10 text-sky-300"
-                              : order.status === "PAGO"
-                                ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
-                                : "border-amber-400/40 bg-amber-400/10 text-amber-300"
-                          }`}
-                        >
-                          {ORDER_STATUS_LABEL[order.status]}
-                        </span>
-                      </div>
-
-                      <ul className="mt-4 space-y-0.5 border-t border-gold-400/10 pt-4 text-sm text-cream/80">
-                        {items.map((item, idx) => (
-                          <li key={idx}>
-                            {item.productName} × {item.quantity} —{" "}
-                            {formatBRL(item.unitPriceCents * item.quantity)}
-                          </li>
-                        ))}
-                      </ul>
-
-                      <div className="mt-3 flex items-center justify-between border-t border-gold-400/10 pt-3 text-sm">
-                        <span className="text-xs text-cream/50">
-                          {order.installments}
-                          {order.installments === "1"
-                            ? "x (à vista)"
-                            : "x sem juros"}
-                        </span>
-                        {order.discountCents > 0 && (
-                          <span className="text-xs text-emerald-400">
-                            Desconto: -{formatBRL(order.discountCents)}
-                          </span>
-                        )}
-                        <span className="font-bold text-gold-400">
-                          Total: {formatBRL(order.totalCents)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <OrdersTable orders={orders} />
             )}
           </div>
         )}
