@@ -8,7 +8,19 @@ export default function ObrigadoPage() {
   return (
     <div className="bg-ink py-20 text-cream">
       <div className="mx-auto max-w-md rounded-2xl border border-gold-400/15 bg-ink-soft px-8 py-12 text-center shadow-gold">
-        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full border border-gold-400/40 bg-gold-400/10">
+        <img
+          src="/logo-vcloset-plain.svg"
+          alt="VCLOSET — Joias e Acessórios"
+          className="mx-auto h-auto w-48"
+        />
+
+        <div className="mx-auto my-8 flex items-center justify-center gap-3">
+          <span className="h-px w-16 bg-gold-400/20" />
+          <span className="h-1.5 w-1.5 rotate-45 border border-gold-400" />
+          <span className="h-px w-16 bg-gold-400/20" />
+        </div>
+
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-gold-400/40 bg-gold-400/10">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -22,21 +34,6 @@ export default function ObrigadoPage() {
           >
             <path d="M20 6 9 17l-5-5" />
           </svg>
-        </div>
-
-        <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-cream/50">
-          Checkout
-        </p>
-        <img
-          src="/logo-vcloset-plain.svg"
-          alt="VCLOSET — Joias e Acessórios"
-          className="mx-auto mt-3 h-auto w-56"
-        />
-
-        <div className="mx-auto my-6 flex items-center justify-center gap-3">
-          <span className="h-px w-16 bg-gold-400/20" />
-          <span className="h-1.5 w-1.5 rotate-45 border border-gold-400" />
-          <span className="h-px w-16 bg-gold-400/20" />
         </div>
 
         <h2 className="text-lg font-semibold">Pedido recebido!</h2>
