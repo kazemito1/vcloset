@@ -46,15 +46,6 @@ const SLIDES: Slide[] = [
     ctaLabel: "Ver presentes",
     ctaHref: "/categorias/colares",
   },
-  {
-    eyebrow: "Nova Categoria",
-    title: "Trajes & Alfaiataria",
-    subtitle:
-      "Conjuntos, blazers e peças sofisticadas para um guarda-roupa elegante e atemporal.",
-    ctaLabel: "Ver trajes",
-    ctaHref: "/categorias/trajes",
-    image: "/images/editorial-trajes.svg",
-  },
 ];
 
 export function HeroCarousel() {
