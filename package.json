@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push && tsx prisma/seed-trajes.ts && tsx prisma/seed-masculino.ts && tsx prisma/seed-masculino-2.ts && tsx prisma/seed-sapatos.ts && tsx prisma/seed-product-images.ts && next build",
+    "build": "prisma db push && tsx prisma/seed-trajes.ts && tsx prisma/seed-masculino.ts && tsx prisma/seed-masculino-2.ts && tsx prisma/seed-sapatos.ts && tsx prisma/seed-product-images.ts && tsx prisma/seed-variants-backfill.ts && next build",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
@@ -14,6 +14,7 @@
     "prisma:seed:masculino": "tsx prisma/seed-masculino.ts",
     "prisma:seed:masculino2": "tsx prisma/seed-masculino-2.ts",
     "prisma:seed:sapatos": "tsx prisma/seed-sapatos.ts",
+    "prisma:seed:variants": "tsx prisma/seed-variants-backfill.ts",
     "prisma:seed:imagens": "tsx prisma/seed-product-images.ts",
     "prisma:seed:cupons": "tsx prisma/seed-incremental-cupons.ts",
     "postinstall": "prisma generate"

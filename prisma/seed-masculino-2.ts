@@ -139,7 +139,7 @@ const masculinoProducts: MasculinoProduct[] = [
       "/products/masculino-corrente-grumet-prata-1.png",
       "/products/masculino-corrente-grumet-prata-2.png",
     ],
-    variants: ["60 cm"],
+    variants: ["45 cm", "50 cm", "60 cm", "70 cm"],
   },
 ];
 
