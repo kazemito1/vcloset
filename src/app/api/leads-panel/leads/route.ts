@@ -46,3 +46,34 @@ export async function DELETE(req: NextRequest) {
 
   return NextResponse.json({ error: "Parâmetro inválido." }, { status: 400 });
 }
+
+const VALID_MANUAL_STATUS = ["AGUARDANDO_PAGAMENTO", "PAGO", "ENVIADO"] as const;
+
+export async function PATCH(req: NextRequest) {
+  const session = await getPanelSession(req);
+  if (!session) {
+    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  }
+
+  const body = await req.json().catch(() => null);
+  const id = body?.id as string | undefined;
+  const manualStatus = body?.manualStatus as string | null | undefined;
+
+  if (!id) {
+    return NextResponse.json({ error: "Informe o id do pedido." }, { status: 400 });
+  }
+
+  if (manualStatus !== null && !VALID_MANUAL_STATUS.includes(manualStatus as never)) {
+    return NextResponse.json({ error: "Status inválido." }, { status: 400 });
+  }
+
+  const lead = await prisma.lead.update({
+    where: { id },
+    data: { manualStatus },
+  });
+
+  // Dispara imediatamente o e-mail correspondente ao novo status, se ainda não enviado
+  await notifyShippedOrders([lead]);
+
+  return NextResponse.json({ ok: true, lead });
+}

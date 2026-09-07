@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
-import { getOrderStatus } from "@/lib/orderStatus";
+import { resolveOrderStatus, ORDER_STATUS_LABEL, type OrderStatus } from "@/lib/orderStatus";
 
 interface LeadItem {
   productName: string;
@@ -32,6 +32,7 @@ interface Lead {
   subtotalCents: number;
   discountCents: number;
   totalCents: number;
+  manualStatus: string | null;
   createdAt: string;
 }
 
@@ -46,6 +47,35 @@ function Field({ label, value }: { label: string; value: string | null }) {
   );
 }
 
+function whatsappLink(phone: string, name: string) {
+  const digits = phone.replace(/\D/g, "");
+  const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
+  const text = encodeURIComponent(
+    `Olá ${name.split(" ")[0]}, aqui é da V.CLOSET! Vi seu pedido e gostaria de conversar sobre ele.`
+  );
+  return `https://wa.me/${withCountry}?text=${text}`;
+}
+
+const STATUS_BADGE: Record<OrderStatus, string> = {
+  AGUARDANDO_PAGAMENTO: "border-amber-400/40 bg-amber-400/10 text-amber-300",
+  PAGO: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300",
+  ENVIADO: "border-sky-400/40 bg-sky-400/10 text-sky-300",
+};
+
+const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
+  { value: "AGUARDANDO_PAGAMENTO", label: "Aguardando pagamento" },
+  { value: "PAGO", label: "Pago" },
+  { value: "ENVIADO", label: "Enviado" },
+];
+
+function toCsvValue(value: string | number) {
+  const str = String(value ?? "");
+  if (/[",\n;]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
 export default function LeadsPanelPage() {
   const [checking, setChecking] = useState(true);
   const [authed, setAuthed] = useState(false);
@@ -57,19 +87,32 @@ export default function LeadsPanelPage() {
   const [loadingLeads, setLoadingLeads] = useState(false);
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
+  const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"leads" | "pedidos">("leads");
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
   const filteredLeads = useMemo(() => {
-    if (!filterFrom && !filterTo) return leads;
     const from = filterFrom ? new Date(`${filterFrom}T00:00:00`).getTime() : null;
     const to = filterTo ? new Date(`${filterTo}T23:59:59.999`).getTime() : null;
+    const term = search.trim().toLowerCase();
     return leads.filter((lead) => {
       const t = new Date(lead.createdAt).getTime();
       if (from !== null && t < from) return false;
       if (to !== null && t > to) return false;
+      if (term) {
+        const haystack = `${lead.fullName} ${lead.email} ${lead.phone} ${lead.cpf}`.toLowerCase();
+        if (!haystack.includes(term)) return false;
+      }
       return true;
     });
-  }, [leads, filterFrom, filterTo]);
+  }, [leads, filterFrom, filterTo, search]);
+
+  const summary = useMemo(() => {
+    const totalCents = filteredLeads.reduce((sum, l) => sum + l.totalCents, 0);
+    const count = filteredLeads.length;
+    const avgCents = count > 0 ? Math.round(totalCents / count) : 0;
+    return { count, totalCents, avgCents };
+  }, [filteredLeads]);
 
   const loadLeads = useCallback(async () => {
     setLoadingLeads(true);
@@ -137,6 +180,69 @@ export default function LeadsPanelPage() {
       method: "DELETE",
     });
     await loadLeads();
+  }
+
+  async function handleStatusChange(id: string, manualStatus: OrderStatus) {
+    setUpdatingStatusId(id);
+    try {
+      const res = await fetch("/api/leads-panel/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, manualStatus }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLeads((prev) =>
+          prev.map((l) => (l.id === id ? { ...l, manualStatus: data.lead.manualStatus } : l))
+        );
+      }
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  }
+
+  function handleExportCsv() {
+    const headers = [
+      "Pedido",
+      "Nome",
+      "E-mail",
+      "Telefone",
+      "CPF",
+      "Cidade",
+      "UF",
+      "Status",
+      "Parcelas",
+      "Total",
+      "Data",
+    ];
+    const rows = filteredLeads.map((lead) => {
+      const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
+      return [
+        lead.id.slice(-6).toUpperCase(),
+        lead.fullName,
+        lead.email,
+        lead.phone,
+        lead.cpf,
+        lead.city,
+        lead.state,
+        ORDER_STATUS_LABEL[status],
+        lead.installments,
+        (lead.totalCents / 100).toFixed(2).replace(".", ","),
+        new Date(lead.createdAt).toLocaleString("pt-BR"),
+      ];
+    });
+    const csv = [headers, ...rows]
+      .map((row) => row.map(toCsvValue).join(";"))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vcloset-pedidos-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   if (checking) {
@@ -258,6 +364,13 @@ export default function LeadsPanelPage() {
               {loadingLeads ? "Atualizando…" : "Atualizar"}
             </button>
             <button
+              onClick={handleExportCsv}
+              disabled={filteredLeads.length === 0}
+              className="rounded border border-gold-400/30 px-4 py-2 text-[10px] font-bold uppercase tracking-widest2 text-gold-400 transition hover:border-gold-400/60 disabled:opacity-30"
+            >
+              Exportar CSV
+            </button>
+            <button
               onClick={handleClearAll}
               disabled={leads.length === 0}
               className="rounded border border-red-500/40 px-4 py-2 text-[10px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/70 disabled:opacity-30"
@@ -296,9 +409,23 @@ export default function LeadsPanelPage() {
           </button>
         </div>
 
-        {tab === "leads" && (
-        <>
         <div className="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-gold-400/15 bg-ink-soft px-5 py-4">
+          <div>
+            <label
+              htmlFor="filter-search"
+              className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40"
+            >
+              Buscar
+            </label>
+            <input
+              id="filter-search"
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Nome, e-mail, telefone ou CPF"
+              className="mt-1 w-56 rounded border border-gold-400/20 bg-ink px-3 py-2 text-sm text-cream outline-none transition focus:border-gold-400/60"
+            />
+          </div>
           <div>
             <label
               htmlFor="filter-from"
@@ -329,26 +456,50 @@ export default function LeadsPanelPage() {
               className="mt-1 rounded border border-gold-400/20 bg-ink px-3 py-2 text-sm text-cream outline-none transition focus:border-gold-400/60"
             />
           </div>
-          {(filterFrom || filterTo) && (
+          {(filterFrom || filterTo || search) && (
             <button
               onClick={() => {
                 setFilterFrom("");
                 setFilterTo("");
+                setSearch("");
               }}
               className="rounded border border-cream/20 px-4 py-2 text-[10px] font-bold uppercase tracking-widest2 text-cream/60 transition hover:border-cream/40"
             >
               Limpar filtro
             </button>
           )}
+
+          <div className="ml-auto flex gap-6 text-right">
+            <div>
+              <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                Pedidos
+              </span>
+              <p className="text-sm font-bold text-cream">{summary.count}</p>
+            </div>
+            <div>
+              <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                Total
+              </span>
+              <p className="text-sm font-bold text-gold-400">{formatBRL(summary.totalCents)}</p>
+            </div>
+            <div>
+              <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                Ticket médio
+              </span>
+              <p className="text-sm font-bold text-cream">{formatBRL(summary.avgCents)}</p>
+            </div>
+          </div>
         </div>
 
+        {tab === "leads" && (
+        <>
         {leads.length === 0 ? (
           <p className="mt-16 text-center text-sm text-cream/50">
             Nenhum lead enviado ainda.
           </p>
         ) : filteredLeads.length === 0 ? (
           <p className="mt-16 text-center text-sm text-cream/50">
-            Nenhum lead no período selecionado.
+            Nenhum lead encontrado para esse filtro.
           </p>
         ) : (
           <div className="mt-8 space-y-4">
@@ -385,6 +536,14 @@ export default function LeadsPanelPage() {
                           {new Date(lead.createdAt).toLocaleString("pt-BR")}
                         </p>
                       </div>
+                      <a
+                        href={whatsappLink(lead.phone, lead.fullName)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded border border-emerald-500/40 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-emerald-300 transition hover:border-emerald-500/70"
+                      >
+                        WhatsApp
+                      </a>
                       <button
                         onClick={() => handleDelete(lead.id)}
                         className="rounded border border-red-500/30 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/60"
@@ -452,65 +611,56 @@ export default function LeadsPanelPage() {
             </p>
           ) : filteredLeads.length === 0 ? (
             <p className="mt-16 text-center text-sm text-cream/50">
-              Nenhum pedido no período selecionado.
+              Nenhum pedido encontrado para esse filtro.
             </p>
           ) : (
-            <>
-              <p className="mt-6 text-xs uppercase tracking-widest2 text-cream/50">
-                {filteredLeads.length} pedido
-                {filteredLeads.length === 1 ? "" : "s"} ·{" "}
-                {formatBRL(
-                  filteredLeads.reduce((sum, l) => sum + l.totalCents, 0)
-                )}{" "}
-                em vendas
-              </p>
-              <div className="mt-4 space-y-3">
-                {filteredLeads.map((lead) => {
-                  let items: LeadItem[] = [];
-                  try {
-                    items = JSON.parse(lead.itemsJson) as LeadItem[];
-                  } catch {
-                    items = [];
-                  }
+            <div className="mt-8 space-y-3">
+              {filteredLeads.map((lead) => {
+                let items: LeadItem[] = [];
+                try {
+                  items = JSON.parse(lead.itemsJson) as LeadItem[];
+                } catch {
+                  items = [];
+                }
+                const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
 
-                  return (
-                    <div
-                      key={lead.id}
-                      className="rounded-lg border border-gold-400/15 bg-ink-soft p-4"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-cream">
-                            #{lead.id.slice(-6).toUpperCase()} · {lead.fullName}
-                          </p>
-                          <p className="mt-0.5 truncate text-xs text-cream/50">
-                            {items
-                              .map((i) => `${i.productName} × ${i.quantity}`)
-                              .join(", ") || "—"}
-                          </p>
-                          <p className="mt-0.5 text-xs text-cream/50">
-                            {new Date(lead.createdAt).toLocaleString("pt-BR")} ·{" "}
-                            {lead.installments}
-                            {lead.installments === "1"
-                              ? "x (à vista)"
-                              : "x sem juros"}
-                          </p>
-                        </div>
+                return (
+                  <div
+                    key={lead.id}
+                    className="rounded-lg border border-gold-400/15 bg-ink-soft p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-cream">
+                          #{lead.id.slice(-6).toUpperCase()} · {lead.fullName}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-cream/50">
+                          {items
+                            .map((i) => `${i.productName} × ${i.quantity}`)
+                            .join(", ") || "—"}
+                        </p>
+                        <p className="mt-0.5 text-xs text-cream/50">
+                          {new Date(lead.createdAt).toLocaleString("pt-BR")} ·{" "}
+                          {lead.installments}
+                          {lead.installments === "1"
+                            ? "x (à vista)"
+                            : "x sem juros"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <a
+                          href={whatsappLink(lead.phone, lead.fullName)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded border border-emerald-500/40 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-emerald-300 transition hover:border-emerald-500/70"
+                        >
+                          WhatsApp
+                        </a>
                         <div className="text-right">
                           <span
-                            className={`inline-block rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 ${
-                              getOrderStatus(lead.createdAt) === "ENVIADO"
-                                ? "border-sky-400/40 bg-sky-400/10 text-sky-300"
-                                : getOrderStatus(lead.createdAt) === "PAGO"
-                                  ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
-                                  : "border-amber-400/40 bg-amber-400/10 text-amber-300"
-                            }`}
+                            className={`inline-block rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 ${STATUS_BADGE[status]}`}
                           >
-                            {getOrderStatus(lead.createdAt) === "ENVIADO"
-                              ? "Pedido enviado"
-                              : getOrderStatus(lead.createdAt) === "PAGO"
-                                ? "Pedido pago"
-                                : "Aguardando pagamento"}
+                            {ORDER_STATUS_LABEL[status]}
                           </span>
                           <p className="mt-1.5 text-sm font-bold text-gold-400">
                             {formatBRL(lead.totalCents)}
@@ -518,10 +668,29 @@ export default function LeadsPanelPage() {
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </>
+                    <div className="mt-3 flex items-center gap-2 border-t border-gold-400/10 pt-3">
+                      <span className="text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                        Marcar como:
+                      </span>
+                      {STATUS_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => handleStatusChange(lead.id, opt.value)}
+                          disabled={updatingStatusId === lead.id || status === opt.value}
+                          className={`rounded border px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest2 transition disabled:opacity-40 ${
+                            status === opt.value
+                              ? STATUS_BADGE[opt.value]
+                              : "border-cream/20 text-cream/60 hover:border-cream/40"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )
         )}
       </div>

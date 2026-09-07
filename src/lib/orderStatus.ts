@@ -16,6 +16,30 @@ export function getOrderStatus(createdAt: Date | string): OrderStatus {
   return "AGUARDANDO_PAGAMENTO";
 }
 
+const STATUS_RANK: Record<OrderStatus, number> = {
+  AGUARDANDO_PAGAMENTO: 0,
+  PAGO: 1,
+  ENVIADO: 2,
+};
+
+function isOrderStatus(value: unknown): value is OrderStatus {
+  return value === "AGUARDANDO_PAGAMENTO" || value === "PAGO" || value === "ENVIADO";
+}
+
+// Resolve o status considerando um override manual definido no painel: o
+// override avança o status antes do prazo automático, mas nunca "volta"
+// o status para trás depois que o tempo automático já avançou mais.
+export function resolveOrderStatus(
+  createdAt: Date | string,
+  manualStatus?: string | null
+): OrderStatus {
+  const auto = getOrderStatus(createdAt);
+  if (isOrderStatus(manualStatus) && STATUS_RANK[manualStatus] > STATUS_RANK[auto]) {
+    return manualStatus;
+  }
+  return auto;
+}
+
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   AGUARDANDO_PAGAMENTO: "Aguardando pagamento",
   PAGO: "Pedido pago",

@@ -239,6 +239,7 @@ model Lead {
   totalCents    Int
   paidEmailSentAt     DateTime?
   shippingEmailSentAt DateTime?
+  manualStatus  String?  // Override manual do status: "PAGO" ou "ENVIADO" (definido no painel)
   createdAt     DateTime @default(now())
 }
 

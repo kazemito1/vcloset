@@ -8,13 +8,14 @@
 
 import { prisma } from "@/lib/prisma";
 import { sendPaidEmail, sendShippingEmail } from "@/lib/resendEmail";
-import { getOrderStatus } from "@/lib/orderStatus";
+import { resolveOrderStatus } from "@/lib/orderStatus";
 
 interface NotifiableLead {
   id: string;
   email: string;
   fullName: string;
   createdAt: Date;
+  manualStatus?: string | null;
   paidEmailSentAt: Date | null;
   shippingEmailSentAt: Date | null;
 }
@@ -23,7 +24,7 @@ export async function notifyShippedOrders(
   leads: NotifiableLead[]
 ): Promise<void> {
   for (const lead of leads) {
-    const status = getOrderStatus(lead.createdAt);
+    const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
 
     if (status !== "PAGO" && status !== "ENVIADO") continue;
 

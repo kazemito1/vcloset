@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getOrderStatus } from "@/lib/orderStatus";
+import { resolveOrderStatus } from "@/lib/orderStatus";
 import { notifyShippedOrders } from "@/lib/shippingNotify";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
       discountCents: lead.discountCents,
       totalCents: lead.totalCents,
       installments: lead.installments,
-      status: getOrderStatus(lead.createdAt),
+      status: resolveOrderStatus(lead.createdAt, lead.manualStatus),
     })),
   });
 }
