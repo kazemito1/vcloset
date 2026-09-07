@@ -253,6 +253,7 @@ model Customer {
   name         String
   email        String   @unique
   passwordHash String
+  cartJson     String?  // Carrinho salvo do cliente (JSON: { items, appliedCode })
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

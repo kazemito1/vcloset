@@ -26,11 +26,54 @@ export function Header({ settings }: HeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
   const totalItems = useCartStore((s) => s.totalItems());
+  const cartItems = useCartStore((s) => s.items);
+  const cartCode = useCartStore((s) => s.appliedCode);
+  const [cartSyncReady, setCartSyncReady] = useState(false);
   const freeShippingLabel = settings ? formatBRL(settings.freeShippingCents) : "R$ 499";
 
   useEffect(() => {
     setCep(window.localStorage.getItem("vcloset-cep") ?? "");
   }, []);
+
+  // Carrinho salvo na conta: restaura a sacola do servidor quando o carrinho
+  // local está vazio (ex.: outro dispositivo) e salva a cada alteração.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/conta/carrinho", { cache: "no-store" });
+        if (res.ok && !cancelled) {
+          const { cart } = await res.json();
+          const local = useCartStore.getState().items;
+          if (Array.isArray(cart?.items) && cart.items.length > 0 && local.length === 0) {
+            useCartStore.setState({
+              items: cart.items,
+              appliedCode: cart.appliedCode ?? null,
+            });
+          }
+        }
+      } catch {
+        // offline: segue só com o carrinho local
+      } finally {
+        if (!cancelled) setCartSyncReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!cartSyncReady) return;
+    const timer = setTimeout(() => {
+      fetch("/api/conta/carrinho", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cartItems, appliedCode: cartCode }),
+      }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [cartItems, cartCode, cartSyncReady]);
 
   function handleCepChange(value: string) {
     const digits = value.replace(/\D/g, "").slice(0, 8);
