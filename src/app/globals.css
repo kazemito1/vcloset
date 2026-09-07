@@ -2,6 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Slide "clipe" da galeria do produto: simula um vídeo curto usando as próprias
+   fotos do produto — zoom lento (Ken Burns) + crossfade entre duas fotos.
+   Não adiciona nenhum arquivo ao deploy. */
+@keyframes vc-clip-zoom {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.14) translate(-1.5%, -1%);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+@keyframes vc-clip-fade-a {
+  0%,
+  42% {
+    opacity: 1;
+  }
+  50%,
+  92% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes vc-clip-fade-b {
+  0%,
+  42% {
+    opacity: 0;
+  }
+  50%,
+  92% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 @layer base {
   body {
     @apply bg-neutral-50 text-ink font-body;
@@ -81,5 +124,27 @@
 
   .admin-table-row {
     @apply border-t border-gold-400/10;
+  }
+}
+
+@layer utilities {
+  .vc-clip-zoom {
+    animation: vc-clip-zoom 8s ease-in-out infinite;
+  }
+
+  .vc-clip-fade-a {
+    animation: vc-clip-fade-a 8s ease-in-out infinite;
+  }
+
+  .vc-clip-fade-b {
+    animation: vc-clip-fade-b 8s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vc-clip-zoom,
+    .vc-clip-fade-a,
+    .vc-clip-fade-b {
+      animation: none;
+    }
   }
 }

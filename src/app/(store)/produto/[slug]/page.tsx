@@ -42,6 +42,7 @@ export default async function ProductPage({ params }: Props) {
           images={product.images}
           name={product.name}
           videoUrl={getProductVideo(product.slug)}
+          motionClip={product.targetGender === "masculino"}
         />
 
         <div>
