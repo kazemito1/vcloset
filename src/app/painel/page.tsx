@@ -91,6 +91,7 @@ export default function LeadsPanelPage() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"leads" | "pedidos" | "pix">("leads");
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [pixStatusFilter, setPixStatusFilter] = useState<"todos" | "pendentes" | "pagos">("todos");
 
   const filteredLeads = useMemo(() => {
     const from = filterFrom ? new Date(`${filterFrom}T00:00:00`).getTime() : null;
@@ -123,16 +124,29 @@ export default function LeadsPanelPage() {
   const pixSummary = useMemo(() => {
     let collectedCents = 0;
     let pendingCents = 0;
+    let pagos = 0;
+    let pendentes = 0;
     for (const lead of pixLeads) {
       const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
       if (status === "PAGO" || status === "ENVIADO") {
         collectedCents += lead.totalCents;
+        pagos += 1;
       } else {
         pendingCents += lead.totalCents;
+        pendentes += 1;
       }
     }
-    return { count: pixLeads.length, collectedCents, pendingCents };
+    return { count: pixLeads.length, collectedCents, pendingCents, pagos, pendentes };
   }, [pixLeads]);
+
+  const pixVisibleLeads = useMemo(() => {
+    if (pixStatusFilter === "todos") return pixLeads;
+    return pixLeads.filter((lead) => {
+      const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
+      const isPaid = status === "PAGO" || status === "ENVIADO";
+      return pixStatusFilter === "pagos" ? isPaid : !isPaid;
+    });
+  }, [pixLeads, pixStatusFilter]);
 
   const loadLeads = useCallback(async () => {
     setLoadingLeads(true);
@@ -729,13 +743,14 @@ export default function LeadsPanelPage() {
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               <div className="rounded-lg border border-gold-400/15 bg-ink-soft p-5">
                 <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
-                  Pagamentos Pix
+                  Pix gerados
                 </span>
                 <p className="mt-1 text-2xl font-bold text-cream">{pixSummary.count}</p>
               </div>
               <div className="rounded-lg border border-emerald-400/30 bg-emerald-400/5 p-5">
                 <span className="block text-[10px] font-bold uppercase tracking-widest2 text-emerald-300/70">
-                  Valor arrecadado
+                  Valor arrecadado · {pixSummary.pagos} pago
+                  {pixSummary.pagos === 1 ? "" : "s"}
                 </span>
                 <p className="mt-1 text-2xl font-bold text-emerald-300">
                   {formatBRL(pixSummary.collectedCents)}
@@ -743,12 +758,35 @@ export default function LeadsPanelPage() {
               </div>
               <div className="rounded-lg border border-amber-400/30 bg-amber-400/5 p-5">
                 <span className="block text-[10px] font-bold uppercase tracking-widest2 text-amber-300/70">
-                  Aguardando pagamento
+                  Aguardando pagamento · {pixSummary.pendentes} pendente
+                  {pixSummary.pendentes === 1 ? "" : "s"}
                 </span>
                 <p className="mt-1 text-2xl font-bold text-amber-300">
                   {formatBRL(pixSummary.pendingCents)}
                 </p>
               </div>
+            </div>
+
+            <div className="mt-6 flex gap-2">
+              {(
+                [
+                  { value: "todos", label: `Histórico (${pixSummary.count})` },
+                  { value: "pendentes", label: `Pendentes (${pixSummary.pendentes})` },
+                  { value: "pagos", label: `Pagos (${pixSummary.pagos})` },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setPixStatusFilter(opt.value)}
+                  className={`rounded-full border px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest2 transition ${
+                    pixStatusFilter === opt.value
+                      ? "border-[#32BCAD]/60 bg-[#32BCAD]/10 text-[#32BCAD]"
+                      : "border-cream/20 text-cream/60 hover:border-cream/40"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
 
             {pixLeads.length === 0 ? (
@@ -757,14 +795,25 @@ export default function LeadsPanelPage() {
                 intermediadora estiver ativa, os pagamentos Pix aparecerão aqui automaticamente,
                 com o valor arrecadado somado acima e filtrável pelo período selecionado.
               </p>
+            ) : pixVisibleLeads.length === 0 ? (
+              <p className="mt-10 text-center text-sm text-cream/50">
+                Nenhum Pix encontrado para esse filtro.
+              </p>
             ) : (
-              <div className="mt-6 space-y-3">
-                {pixLeads.map((lead) => {
+              <div className="mt-6 space-y-4">
+                {pixVisibleLeads.map((lead) => {
                   const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
+                  let items: LeadItem[] = [];
+                  try {
+                    items = JSON.parse(lead.itemsJson) as LeadItem[];
+                  } catch {
+                    items = [];
+                  }
+
                   return (
                     <div
                       key={lead.id}
-                      className="rounded-lg border border-gold-400/15 bg-ink-soft p-4"
+                      className="rounded-lg border border-gold-400/15 bg-ink-soft p-5"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="min-w-0">
@@ -772,10 +821,21 @@ export default function LeadsPanelPage() {
                             #{lead.id.slice(-6).toUpperCase()} · {lead.fullName}
                           </p>
                           <p className="mt-0.5 text-xs text-cream/50">
-                            {new Date(lead.createdAt).toLocaleString("pt-BR")}
+                            {lead.email} · {lead.phone}
+                          </p>
+                          <p className="mt-0.5 text-xs text-cream/50">
+                            Pix gerado em {new Date(lead.createdAt).toLocaleString("pt-BR")}
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
+                          <a
+                            href={whatsappLink(lead.phone, lead.fullName)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded border border-emerald-500/40 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-emerald-300 transition hover:border-emerald-500/70"
+                          >
+                            WhatsApp
+                          </a>
                           <span className="rounded-full border border-[#32BCAD]/40 bg-[#32BCAD]/10 px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 text-[#32BCAD]">
                             Pix
                           </span>
@@ -788,6 +848,67 @@ export default function LeadsPanelPage() {
                             {formatBRL(lead.totalCents)}
                           </p>
                         </div>
+                      </div>
+
+                      <div className="mt-4 border-t border-gold-400/10 pt-4">
+                        <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                          Dados do lead
+                        </span>
+                        <div className="mt-2 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                          <Field label="CPF" value={lead.cpf} />
+                          <Field label="CEP" value={lead.cep} />
+                          <Field
+                            label="Endereço"
+                            value={`${lead.address}, ${lead.number}`}
+                          />
+                          <Field label="Complemento" value={lead.complement} />
+                          <Field label="Bairro" value={lead.neighborhood} />
+                          <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
+                        </div>
+                      </div>
+
+                      <div className="mt-4 border-t border-gold-400/10 pt-4">
+                        <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                          Itens
+                        </span>
+                        <ul className="mt-1 space-y-0.5 text-sm text-cream/80">
+                          {items.map((item, idx) => (
+                            <li key={idx}>
+                              {item.productName} × {item.quantity} —{" "}
+                              {formatBRL(item.unitPriceCents * item.quantity)}
+                            </li>
+                          ))}
+                        </ul>
+                        {lead.notes && (
+                          <>
+                            <span className="mt-3 block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                              Observações
+                            </span>
+                            <p className="mt-1 whitespace-pre-line text-sm text-cream/80">
+                              {lead.notes}
+                            </p>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="mt-4 flex items-center gap-2 border-t border-gold-400/10 pt-4">
+                        <span className="text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                          Marcar como:
+                        </span>
+                        {STATUS_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => handleStatusChange(lead.id, opt.value)}
+                            disabled={updatingStatusId === lead.id || status === opt.value}
+                            className={`rounded border px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest2 transition disabled:opacity-40 ${
+                              status === opt.value
+                                ? STATUS_BADGE[opt.value]
+                                : "border-cream/20 text-cream/60 hover:border-cream/40"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   );
