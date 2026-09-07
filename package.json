@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push && tsx prisma/seed-trajes.ts && tsx prisma/seed-masculino.ts && tsx prisma/seed-masculino-2.ts && tsx prisma/seed-sapatos.ts && tsx prisma/seed-product-images.ts && tsx prisma/seed-variants-backfill.ts && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
