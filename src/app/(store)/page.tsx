@@ -44,6 +44,24 @@ export default async function HomePage() {
     <div>
       <HeroCarousel />
 
+      {/* Faixa promocional */}
+      <section className="bg-cream border-y border-gold-300/30 py-3 md:py-4">
+        <div className="container-page flex items-center justify-center gap-4 md:gap-8 text-center">
+          <span className="hidden h-px w-10 bg-gold-400/50 md:block" aria-hidden="true" />
+          <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 font-serif text-ink">
+            <span className="text-xs uppercase tracking-[0.2em] text-gold-700 md:text-sm">
+              Coleção Outono Inverno
+            </span>
+            <span className="mx-1 text-gold-400 md:mx-2">·</span>
+            <span className="text-sm uppercase tracking-widest md:text-base">até</span>
+            <span className="text-xl font-medium tracking-tight text-gold-600 md:text-2xl">
+              30% OFF
+            </span>
+          </div>
+          <span className="hidden h-px w-10 bg-gold-400/50 md:block" aria-hidden="true" />
+        </div>
+      </section>
+
       <CategoryGrid />
 
       <TrustBadges freeShippingCents={settings.freeShippingCents} />
