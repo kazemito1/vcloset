@@ -71,11 +71,11 @@ export function HeroCarousel() {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const timer = setTimeout(() => {
       setActive((prev) => (prev + 1) % SLIDES.length);
     }, SLIDE_MS);
-    return () => clearInterval(timer);
-  }, []);
+    return () => clearTimeout(timer);
+  }, [active]);
 
   return (
     <section className="relative min-h-[70vh] overflow-hidden bg-black text-white">
