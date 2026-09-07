@@ -36,7 +36,8 @@ export async function GET(req: NextRequest) {
       discountCents: lead.discountCents,
       totalCents: lead.totalCents,
       installments: lead.installments,
-      status: resolveOrderStatus(lead.createdAt, lead.manualStatus),
+      paymentMethod: lead.paymentMethod,
+      status: resolveOrderStatus(lead.createdAt, lead.manualStatus, lead.paymentMethod),
     })),
   });
 }

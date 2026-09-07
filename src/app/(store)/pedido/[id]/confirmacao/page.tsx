@@ -22,7 +22,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
 
   // Status derivado do tempo (mesma regra de Minha Conta e do painel):
   // Aguardando pagamento → Pago (30 min) → Enviado (6 h)
-  const status = resolveOrderStatus(order!.createdAt, null);
+  const status = resolveOrderStatus(order!.createdAt, null, order!.paymentMethod);
   const isPaid = status === "PAGO" || status === "ENVIADO";
 
   return (

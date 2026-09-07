@@ -58,6 +58,7 @@ function whatsappLink(phone: string, name: string) {
 }
 
 const STATUS_BADGE: Record<OrderStatus, string> = {
+  WHATSAPP: "border-[#25D366]/50 bg-[#25D366]/10 text-[#4ae08a]",
   AGUARDANDO_PAGAMENTO: "border-amber-400/40 bg-amber-400/10 text-amber-300",
   PAGO: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300",
   ENVIADO: "border-sky-400/40 bg-sky-400/10 text-sky-300",
@@ -127,7 +128,7 @@ export default function LeadsPanelPage() {
     let pagos = 0;
     let pendentes = 0;
     for (const lead of pixLeads) {
-      const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
+      const status = resolveOrderStatus(lead.createdAt, lead.manualStatus, lead.paymentMethod);
       if (status === "PAGO" || status === "ENVIADO") {
         collectedCents += lead.totalCents;
         pagos += 1;
@@ -142,7 +143,7 @@ export default function LeadsPanelPage() {
   const pixVisibleLeads = useMemo(() => {
     if (pixStatusFilter === "todos") return pixLeads;
     return pixLeads.filter((lead) => {
-      const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
+      const status = resolveOrderStatus(lead.createdAt, lead.manualStatus, lead.paymentMethod);
       const isPaid = status === "PAGO" || status === "ENVIADO";
       return pixStatusFilter === "pagos" ? isPaid : !isPaid;
     });
@@ -250,7 +251,7 @@ export default function LeadsPanelPage() {
       "Data",
     ];
     const rows = filteredLeads.map((lead) => {
-      const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
+      const status = resolveOrderStatus(lead.createdAt, lead.manualStatus, lead.paymentMethod);
       return [
         lead.id.slice(-6).toUpperCase(),
         lead.fullName,
@@ -666,7 +667,7 @@ export default function LeadsPanelPage() {
                 } catch {
                   items = [];
                 }
-                const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
+                const status = resolveOrderStatus(lead.createdAt, lead.manualStatus, lead.paymentMethod);
 
                 return (
                   <div
@@ -802,7 +803,7 @@ export default function LeadsPanelPage() {
             ) : (
               <div className="mt-6 space-y-4">
                 {pixVisibleLeads.map((lead) => {
-                  const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
+                  const status = resolveOrderStatus(lead.createdAt, lead.manualStatus, lead.paymentMethod);
                   let items: LeadItem[] = [];
                   try {
                     items = JSON.parse(lead.itemsJson) as LeadItem[];

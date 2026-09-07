@@ -267,15 +267,7 @@ export default function CheckoutPage() {
           ...form,
           paymentMethod: payMethod,
           website: honeypot,
-          items: items.map((i) => ({
-            productName: i.variantLabel
-              ? `${i.name} — ${i.variantLabel}`
-              : i.name,
-            quantity: i.quantity,
-            unitPriceCents: i.unitPriceCents,
-            productSlug: i.slug,
-            image: i.image,
-          })),
+          items: buildItemsPayload(),
           discountCents,
         }),
       });
@@ -286,20 +278,7 @@ export default function CheckoutPage() {
         throw new Error(data.error || "Erro ao enviar.");
       }
 
-      // Salva os dados pessoais/endereço no navegador para a próxima compra
-      if (saveData) {
-        try {
-          const toSave = Object.fromEntries(
-            SAVEABLE_FIELDS.map((field) => [field, form[field]])
-          );
-          window.localStorage.setItem(SAVED_CUSTOMER_KEY, JSON.stringify(toSave));
-        } catch {
-          // storage indisponível: ignora silenciosamente
-        }
-      }
-
-      clearCart();
-      router.push("/obrigado");
+      finalizarPedidoNoSite();
     } catch (err) {
       setStatus({
         type: "error",
@@ -307,6 +286,89 @@ export default function CheckoutPage() {
       });
       setSubmitting(false);
     }
+  }
+
+  function buildItemsPayload() {
+    return items.map((i) => ({
+      productName: i.variantLabel ? `${i.name} — ${i.variantLabel}` : i.name,
+      quantity: i.quantity,
+      unitPriceCents: i.unitPriceCents,
+      productSlug: i.slug,
+      image: i.image,
+    }));
+  }
+
+  // Salva os dados pessoais (se autorizado), limpa a sacola e mostra a
+  // confirmação de pedido recebido no site.
+  function finalizarPedidoNoSite() {
+    if (saveData) {
+      try {
+        const toSave = Object.fromEntries(
+          SAVEABLE_FIELDS.map((field) => [field, form[field]])
+        );
+        window.localStorage.setItem(SAVED_CUSTOMER_KEY, JSON.stringify(toSave));
+      } catch {
+        // storage indisponível: ignora silenciosamente
+      }
+    }
+    clearCart();
+    router.push("/obrigado");
+  }
+
+  // Pix: ao clicar em "Finalizar compra pelo WhatsApp" o link abre o WhatsApp
+  // normalmente (comportamento padrão do <a>) e o pedido é registrado no site
+  // em paralelo, aparecendo em "Meus Pedidos" com o status "Finalize no Whatsapp".
+  function handlePixWhatsapp(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (submitting) {
+      e.preventDefault();
+      return;
+    }
+
+    const validation = validateLead({ ...form, paymentMethod: "PIX" });
+    if (Object.keys(validation).length > 0) {
+      e.preventDefault();
+      setErrors(validation);
+      setStatus({
+        type: "error",
+        message: "Preencha seus dados acima antes de finalizar pelo WhatsApp.",
+      });
+      return;
+    }
+    setErrors({});
+    setStatus(null);
+
+    void (async () => {
+      setSubmitting(true);
+      try {
+        const res = await fetch("/api/leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...form,
+            paymentMethod: "PIX",
+            website: honeypot,
+            items: buildItemsPayload(),
+            discountCents,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (data.fields) setErrors(data.fields);
+          throw new Error(data.error || "Erro ao registrar o pedido.");
+        }
+        finalizarPedidoNoSite();
+      } catch (err) {
+        setStatus({
+          type: "error",
+          message:
+            err instanceof Error
+              ? err.message
+              : "Erro ao registrar o pedido.",
+        });
+      } finally {
+        setSubmitting(false);
+      }
+    })();
   }
 
   function inputClass(field: keyof LeadData) {
@@ -675,7 +737,10 @@ export default function CheckoutPage() {
                   href={WHATSAPP_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#25D366] text-xs font-bold uppercase tracking-widest2 text-white transition hover:brightness-95"
+                  onClick={handlePixWhatsapp}
+                  className={`mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#25D366] text-xs font-bold uppercase tracking-widest2 text-white transition hover:brightness-95 ${
+                    submitting ? "pointer-events-none opacity-60" : ""
+                  }`}
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -690,7 +755,8 @@ export default function CheckoutPage() {
 
                 <p className="mt-3 text-center text-[11px] text-ink/40">
                   Você será direcionado ao WhatsApp com os detalhes do seu
-                  pedido já preenchidos.
+                  pedido já preenchidos e ele será registrado no site com o
+                  status &quot;Finalize no Whatsapp&quot;.
                 </p>
               </div>
             )}

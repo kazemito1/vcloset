@@ -17,6 +17,7 @@ interface NotifiableLead {
   fullName: string;
   createdAt: Date;
   manualStatus?: string | null;
+  paymentMethod?: string | null;
   paidEmailSentAt: Date | null;
   shippingEmailSentAt: Date | null;
 }
@@ -25,7 +26,11 @@ export async function notifyShippedOrders(
   leads: NotifiableLead[]
 ): Promise<void> {
   for (const lead of leads) {
-    const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
+    const status = resolveOrderStatus(
+      lead.createdAt,
+      lead.manualStatus,
+      lead.paymentMethod
+    );
 
     if (status !== "PAGO" && status !== "ENVIADO") continue;
 

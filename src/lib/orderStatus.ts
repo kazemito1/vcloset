@@ -4,7 +4,11 @@
 // Os e-mails são disparados simultaneamente com a mudança de status no site.
 // Ajuste os prazos via variáveis de ambiente (em minutos).
 
-export type OrderStatus = "AGUARDANDO_PAGAMENTO" | "PAGO" | "ENVIADO";
+export type OrderStatus =
+  | "WHATSAPP"
+  | "AGUARDANDO_PAGAMENTO"
+  | "PAGO"
+  | "ENVIADO";
 
 const AUTO_PAID_MINUTES = Number(process.env.ORDER_AUTO_PAID_MINUTES || 30);
 const AUTO_SHIPPED_MINUTES = Number(process.env.ORDER_AUTO_SHIPPED_MINUTES || 360);
@@ -18,13 +22,19 @@ export function getOrderStatus(createdAt: Date | string): OrderStatus {
 }
 
 const STATUS_RANK: Record<OrderStatus, number> = {
-  AGUARDANDO_PAGAMENTO: 0,
-  PAGO: 1,
-  ENVIADO: 2,
+  WHATSAPP: 0,
+  AGUARDANDO_PAGAMENTO: 1,
+  PAGO: 2,
+  ENVIADO: 3,
 };
 
 function isOrderStatus(value: unknown): value is OrderStatus {
-  return value === "AGUARDANDO_PAGAMENTO" || value === "PAGO" || value === "ENVIADO";
+  return (
+    value === "WHATSAPP" ||
+    value === "AGUARDANDO_PAGAMENTO" ||
+    value === "PAGO" ||
+    value === "ENVIADO"
+  );
 }
 
 // Resolve o status considerando um override manual definido no painel: o
@@ -32,9 +42,15 @@ function isOrderStatus(value: unknown): value is OrderStatus {
 // o status para trás depois que o tempo automático já avançou mais.
 export function resolveOrderStatus(
   createdAt: Date | string,
-  manualStatus?: string | null
+  manualStatus?: string | null,
+  paymentMethod?: string | null
 ): OrderStatus {
-  const auto = getOrderStatus(createdAt);
+  // Pedidos Pix finalizados via WhatsApp ficam em "Finalize no Whatsapp"
+  // até o admin avançar o status manualmente no painel.
+  const auto =
+    paymentMethod?.toUpperCase() === "PIX"
+      ? "WHATSAPP"
+      : getOrderStatus(createdAt);
   if (isOrderStatus(manualStatus) && STATUS_RANK[manualStatus] > STATUS_RANK[auto]) {
     return manualStatus;
   }
@@ -42,6 +58,7 @@ export function resolveOrderStatus(
 }
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  WHATSAPP: "Finalize no Whatsapp",
   AGUARDANDO_PAGAMENTO: "Aguardando pagamento",
   PAGO: "Pedido pago",
   ENVIADO: "Pedido enviado",

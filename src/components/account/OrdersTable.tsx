@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ORDER_STATUS_LABEL, type OrderStatus } from "@/lib/orderStatus";
+import { WHATSAPP_NUMBER } from "@/lib/constants";
 
 interface OrderItem {
   productName: string;
@@ -19,6 +20,7 @@ export interface OrderRow {
   discountCents: number;
   totalCents: number;
   installments: string;
+  paymentMethod: string;
   status: OrderStatus;
 }
 
@@ -35,9 +37,21 @@ function statusBadgeClass(status: OrderStatus): string {
       return "border-sky-400/40 bg-sky-400/10 text-sky-300";
     case "PAGO":
       return "border-emerald-400/40 bg-emerald-400/10 text-emerald-300";
+    case "WHATSAPP":
+      return "border-[#25D366]/50 bg-[#25D366]/10 text-[#4ae08a]";
     default:
       return "border-amber-400/40 bg-amber-400/10 text-amber-300";
   }
+}
+
+// Link do WhatsApp para finalizar um pedido Pix, no mesmo padrão do checkout:
+// puxa automaticamente os produtos e o total da sacola.
+function whatsappFinalizeLink(items: OrderItem[], totalCents: number): string {
+  const produtosMsg = items
+    .map((i) => `• ${i.productName} (${i.quantity}x)`)
+    .join("\n");
+  const texto = `Olá! Quero finalizar a compra do pedido:\n${produtosMsg}\nTotal: ${formatBRL(totalCents)}`;
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(texto)}`;
 }
 
 export function OrdersTable({ orders }: { orders: OrderRow[] }) {
@@ -141,11 +155,23 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
                   )}
                 </td>
                 <td className="px-4 py-4">
-                  <span
-                    className={`inline-block whitespace-nowrap rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 ${statusBadgeClass(order.status)}`}
-                  >
-                    {ORDER_STATUS_LABEL[order.status]}
-                  </span>
+                  {order.status === "WHATSAPP" ? (
+                    <a
+                      href={whatsappFinalizeLink(items, order.totalCents)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Clique para finalizar este pedido pelo WhatsApp"
+                      className={`inline-block whitespace-nowrap rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 transition hover:brightness-125 ${statusBadgeClass(order.status)}`}
+                    >
+                      {ORDER_STATUS_LABEL[order.status]}
+                    </a>
+                  ) : (
+                    <span
+                      className={`inline-block whitespace-nowrap rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 ${statusBadgeClass(order.status)}`}
+                    >
+                      {ORDER_STATUS_LABEL[order.status]}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-4 text-right">
                   <p className="font-bold text-gold-400">
