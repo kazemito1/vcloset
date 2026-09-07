@@ -1,9 +1,13 @@
+import Image from "next/image";
+import Link from "next/link";
 import { ORDER_STATUS_LABEL, type OrderStatus } from "@/lib/orderStatus";
 
 interface OrderItem {
   productName: string;
   quantity: number;
   unitPriceCents: number;
+  productSlug?: string;
+  image?: string;
 }
 
 export interface OrderRow {
@@ -91,13 +95,48 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
                   {items.length === 0 ? (
                     <span className="text-cream/40">—</span>
                   ) : (
-                    <ul className="space-y-1">
-                      {items.map((item, idx) => (
-                        <li key={idx}>
-                          {item.productName}
-                          {item.quantity > 1 ? ` (×${item.quantity})` : ""}
-                        </li>
-                      ))}
+                    <ul className="space-y-3">
+                      {items.map((item, idx) => {
+                        const content = (
+                          <>
+                            <span className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-sm border border-gold-400/10 bg-ink">
+                              {item.image ? (
+                                <Image
+                                  src={item.image}
+                                  alt={item.productName}
+                                  fill
+                                  sizes="48px"
+                                  className="object-cover"
+                                />
+                              ) : null}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-cream/80">
+                                {item.productName}
+                                {item.quantity > 1 ? ` (×${item.quantity})` : ""}
+                              </span>
+                              <span className="block text-[11px] text-cream/40">
+                                {formatBRL(item.unitPriceCents)} un.
+                              </span>
+                            </span>
+                          </>
+                        );
+
+                        return (
+                          <li key={idx} className="flex items-center gap-3">
+                            {item.productSlug ? (
+                              <Link
+                                href={`/produto/${item.productSlug}`}
+                                className="flex min-w-0 flex-1 items-center gap-3 transition-opacity hover:opacity-80"
+                              >
+                                {content}
+                              </Link>
+                            ) : (
+                              content
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </td>

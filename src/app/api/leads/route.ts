@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateLead, type LeadData } from "@/lib/leadValidation";
 import { sendConfirmationEmail } from "@/lib/resendEmail";
+import { getCustomerSession } from "@/lib/customerAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,8 @@ interface IncomingItem {
   productName?: unknown;
   quantity?: unknown;
   unitPriceCents?: unknown;
+  productSlug?: unknown;
+  image?: unknown;
 }
 
 export async function POST(req: NextRequest) {
@@ -62,6 +65,8 @@ export async function POST(req: NextRequest) {
         productName: String(i.productName ?? "").slice(0, 200),
         quantity: Math.max(1, Math.min(99, Number(i.quantity) || 1)),
         unitPriceCents: Math.max(0, Math.round(Number(i.unitPriceCents) || 0)),
+        productSlug: typeof i.productSlug === "string" ? i.productSlug.slice(0, 200) : "",
+        image: typeof i.image === "string" ? i.image.slice(0, 500) : "",
       }))
       .filter((i) => i.productName !== "");
 
@@ -80,10 +85,22 @@ export async function POST(req: NextRequest) {
       return s === "" ? null : s;
     };
 
+    // Cliente logado: o pedido é sempre vinculado ao e-mail da conta,
+    // garantindo que apareça no histórico de "Minha Conta".
+    let orderEmail = String(data.email).trim().toLowerCase();
+    const session = await getCustomerSession(req);
+    if (session) {
+      const customer = await prisma.customer.findUnique({
+        where: { id: session.customerId },
+        select: { email: true },
+      });
+      if (customer) orderEmail = customer.email;
+    }
+
     const lead = await prisma.lead.create({
       data: {
         fullName: String(data.fullName).trim(),
-        email: String(data.email).trim().toLowerCase(),
+        email: orderEmail,
         phone: String(data.phone).trim(),
         cpf: String(data.cpf).trim(),
         cep: String(data.cep).trim(),

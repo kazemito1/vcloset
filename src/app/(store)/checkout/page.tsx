@@ -207,6 +207,8 @@ export default function CheckoutPage() {
               : i.name,
             quantity: i.quantity,
             unitPriceCents: i.unitPriceCents,
+            productSlug: i.slug,
+            image: i.image,
           })),
           discountCents,
         }),
