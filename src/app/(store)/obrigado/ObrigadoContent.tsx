@@ -88,6 +88,12 @@ export function ObrigadoContent() {
             >
               Continuar comprando
             </Link>
+            <Link
+              href="/conta"
+              className="inline-flex h-11 w-full items-center justify-center rounded-full border border-gold-400/50 text-xs font-bold uppercase tracking-widest2 text-gold-400 transition hover:bg-gold-400/10"
+            >
+              Meus pedidos
+            </Link>
           </div>
         )}
 
