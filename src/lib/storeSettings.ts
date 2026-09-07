@@ -19,7 +19,7 @@ const DEFAULTS: StoreSettingsData = {
   storeName: "V.CLOSET",
   storeSlogan: null,
   freeShippingCents: 29900,
-  whatsappNumber: "5511999999999",
+  whatsappNumber: "5521995709075",
   instagramUrl: null,
   facebookUrl: null,
   tiktokUrl: null,

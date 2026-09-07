@@ -31,5 +31,5 @@ export const NAV_GROUPS: NavGroup[] = [
 
 export const STORE_NAME = "V.CLOSET";
 
-export const WHATSAPP_NUMBER = "5511999999999";
-export const WHATSAPP_MESSAGE = "Olá! Vim do site da V.CLOSET e gostaria de mais informações.";
+export const WHATSAPP_NUMBER = "5521995709075";
+export const WHATSAPP_MESSAGE = "Olá! Visitei o site da V.CLOSET e me interessei por um produto.";

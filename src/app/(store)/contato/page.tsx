@@ -22,7 +22,7 @@ export default function ContactPage() {
           <h2 className="font-serif text-xl text-ink">Informações de contato</h2>
           <ul className="mt-4 space-y-3 text-ink/70">
             <li>E-mail: contato@vcloset.com.br</li>
-            <li>Telefone: (11) 4000-0000</li>
+            <li>Telefone: (21) 99570-9075</li>
             <li>Atendimento: Segunda a sexta, 9h às 18h</li>
             <li>Endereço: Av. das Joias, 1000 - São Paulo/SP</li>
           </ul>

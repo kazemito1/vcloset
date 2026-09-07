@@ -61,7 +61,7 @@ export function Footer({ settings }: FooterProps) {
           <h4 className="mb-4 text-sm uppercase tracking-widest2 text-gold-400">Atendimento</h4>
           <ul className="space-y-2 text-sm text-cream/70">
             <li>contato@vcloset.com.br</li>
-            <li>(11) 4000-0000</li>
+            <li>(21) 99570-9075</li>
             <li>Seg a Sex, 9h às 18h</li>
           </ul>
           {socialLinks.length > 0 && (
