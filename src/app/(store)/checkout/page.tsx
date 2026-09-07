@@ -39,6 +39,36 @@ const EMPTY_FORM: LeadData = {
   notes: "",
 };
 
+const SAVED_CUSTOMER_KEY = "vcloset-customer-data";
+
+// Campos que podem ser salvos no navegador para facilitar a próxima compra.
+// Dados de cartão nunca entram nessa lista.
+type SaveableField =
+  | "fullName"
+  | "email"
+  | "phone"
+  | "cpf"
+  | "cep"
+  | "address"
+  | "number"
+  | "complement"
+  | "neighborhood"
+  | "city"
+  | "state";
+const SAVEABLE_FIELDS: SaveableField[] = [
+  "fullName",
+  "email",
+  "phone",
+  "cpf",
+  "cep",
+  "address",
+  "number",
+  "complement",
+  "neighborhood",
+  "city",
+  "state",
+];
+
 export default function CheckoutPage() {
   const router = useRouter();
   const items = useCartStore((s) => s.items);
@@ -48,6 +78,7 @@ export default function CheckoutPage() {
   const clearCart = useCartStore((s) => s.clearCart);
 
   const [form, setForm] = useState<LeadData>({ ...EMPTY_FORM });
+  const [saveData, setSaveData] = useState(true);
   const [honeypot, setHoneypot] = useState("");
   const [errors, setErrors] = useState<LeadErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -59,8 +90,23 @@ export default function CheckoutPage() {
   const [cartReady, setCartReady] = useState(false);
 
   // aguarda a hidratação do carrinho persistido (zustand/persist)
+  // e carrega dados salvos do cliente, se houver
   useEffect(() => {
     setCartReady(true);
+    try {
+      const saved = window.localStorage.getItem(SAVED_CUSTOMER_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setForm((current) => ({
+          ...current,
+          ...Object.fromEntries(
+            SAVEABLE_FIELDS.map((field) => [field, parsed[field] ?? current[field]])
+          ),
+        }));
+      }
+    } catch {
+      // ignora JSON corrompido
+    }
   }, []);
 
   function update(field: keyof LeadData, value: string) {
@@ -170,6 +216,18 @@ export default function CheckoutPage() {
       if (!res.ok) {
         if (data.fields) setErrors(data.fields);
         throw new Error(data.error || "Erro ao enviar.");
+      }
+
+      // Salva os dados pessoais/endereço no navegador para a próxima compra
+      if (saveData) {
+        try {
+          const toSave = Object.fromEntries(
+            SAVEABLE_FIELDS.map((field) => [field, form[field]])
+          );
+          window.localStorage.setItem(SAVED_CUSTOMER_KEY, JSON.stringify(toSave));
+        } catch {
+          // storage indisponível: ignora silenciosamente
+        }
       }
 
       clearCart();
@@ -531,6 +589,16 @@ export default function CheckoutPage() {
             >
               {submitting ? "Processando..." : "Concluir Pagamento"}
             </button>
+
+            <label className="flex cursor-pointer items-center justify-center gap-2 text-xs text-cream/60">
+              <input
+                type="checkbox"
+                checked={saveData}
+                onChange={(e) => setSaveData(e.target.checked)}
+                className="h-4 w-4 accent-gold-400"
+              />
+              Salvar meus dados para uma próxima compra
+            </label>
 
             <div className="flex flex-wrap items-center justify-center gap-2">
               {/* Visa */}
