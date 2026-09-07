@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { parseProduct } from "@/lib/parseProduct";
+import { getProductVideo } from "@/lib/productVideos";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { AddToCartForm } from "@/components/product/AddToCartForm";
 import { ProductRating } from "@/components/product/ProductRating";
@@ -37,7 +38,11 @@ export default async function ProductPage({ params }: Props) {
       />
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-        <ProductGallery images={product.images} name={product.name} />
+        <ProductGallery
+          images={product.images}
+          name={product.name}
+          videoUrl={getProductVideo(product.slug)}
+        />
 
         <div>
           <p className="text-xs uppercase tracking-widest2 text-gold-600">
