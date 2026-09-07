@@ -42,8 +42,6 @@ export default async function HomePage() {
 
   return (
     <div>
-      <HeroCarousel />
-
       {/* Faixa promocional */}
       <section className="bg-cream border-y border-gold-300/30 py-3 md:py-4">
         <div className="container-page flex items-center justify-center gap-4 md:gap-8 text-center">
@@ -61,6 +59,8 @@ export default async function HomePage() {
           <span className="hidden h-px w-10 bg-gold-400/50 md:block" aria-hidden="true" />
         </div>
       </section>
+
+      <HeroCarousel />
 
       <CategoryGrid />
 

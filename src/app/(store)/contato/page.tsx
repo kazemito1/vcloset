@@ -24,7 +24,7 @@ export default function ContactPage() {
             <li>E-mail: contato@vcloset.com.br</li>
             <li>Telefone: (21) 99570-9075</li>
             <li>Atendimento: Segunda a sexta, 9h às 18h</li>
-            <li>Endereço: Av. das Joias, 1000 - São Paulo/SP</li>
+            <li>Endereço: Avenida das Américas, 3900, Rio de Janeiro, Rio de Janeiro, 22640-102</li>
           </ul>
         </div>
 
