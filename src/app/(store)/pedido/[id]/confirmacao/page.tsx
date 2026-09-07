@@ -2,19 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatBRL } from "@/lib/format";
+import { resolveOrderStatus, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 
 export const revalidate = 0;
 
 interface Props {
   params: { id: string };
 }
-
-const statusLabels: Record<string, string> = {
-  PENDING: "Aguardando pagamento",
-  PAID: "Pagamento confirmado",
-  FAILED: "Pagamento não aprovado",
-  CANCELED: "Pedido cancelado",
-};
 
 export default async function OrderConfirmationPage({ params }: Props) {
   const order = await prisma.order.findUnique({
@@ -26,7 +20,10 @@ export default async function OrderConfirmationPage({ params }: Props) {
     notFound();
   }
 
-  const isPaid = order!.status === "PAID";
+  // Status derivado do tempo (mesma regra de Minha Conta e do painel):
+  // Aguardando pagamento → Pago (30 min) → Enviado (6 h)
+  const status = resolveOrderStatus(order!.createdAt, null);
+  const isPaid = status === "PAGO" || status === "ENVIADO";
 
   return (
     <div className="container-page py-16 md:py-24 text-center">
@@ -43,7 +40,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
           {isPaid ? "Pedido confirmado!" : "Pedido recebido"}
         </h1>
         <p className="mt-3 text-ink/60">
-          {statusLabels[order!.status] || order!.status} — Nº do pedido: {order!.id}
+          {ORDER_STATUS_LABEL[status]} — Nº do pedido: {order!.id}
         </p>
 
         <div className="mt-10 border border-gold-400/30 p-6 text-left">
