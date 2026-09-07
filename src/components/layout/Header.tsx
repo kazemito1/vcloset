@@ -193,6 +193,18 @@ export function Header({ settings }: HeaderProps) {
 
         <div className="absolute right-0 flex items-center gap-4">
           <Link
+            href="/busca"
+            aria-label="Buscar produtos"
+            className={`transition-colors hover:text-gold-600 ${
+              pathname === "/busca" ? "text-gold-600" : "text-ink"
+            }`}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="11" cy="11" r="7" strokeWidth="1.4" />
+              <path d="M20 20l-4.35-4.35" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+          <Link
             href="/conta"
             aria-label="Minha Conta"
             className={`transition-colors hover:text-gold-600 ${
