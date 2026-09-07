@@ -333,7 +333,7 @@ export default function CheckoutPage() {
             Checkout
           </p>
           <img
-            src="/logo-vcloset-plain.svg"
+            src="/logo-vcloset-dark.svg"
             alt="VCLOSET — Joias e Acessórios"
             className="mx-auto mt-3 h-auto w-64 sm:w-80"
           />
