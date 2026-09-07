@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatBRL } from "@/lib/format";
@@ -22,13 +25,20 @@ export function ProductCard({
   image,
   hoverImage,
 }: ProductCardProps) {
+  const [showAlt, setShowAlt] = useState(false);
   const hasDiscount = typeof salePriceCents === "number" && salePriceCents > 0 && salePriceCents < priceCents;
   const discountPercent = hasDiscount
     ? Math.round(((priceCents - salePriceCents!) / priceCents) * 100)
     : 0;
 
   return (
-    <Link href={`/produto/${slug}`} className="group block">
+    <Link
+      href={`/produto/${slug}`}
+      className="group block"
+      onMouseEnter={() => setShowAlt(true)}
+      onMouseLeave={() => setShowAlt(false)}
+      onTouchStart={() => setShowAlt(true)}
+    >
       <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-neutral-100">
         {hasDiscount && (
           <span className="absolute left-2 top-2 z-10 rounded-sm bg-gold-500 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-ink">
@@ -39,7 +49,7 @@ export function ProductCard({
           src={image}
           alt={name}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className={`object-cover transition-transform duration-500 ${showAlt ? "scale-105" : ""}`}
           sizes="(max-width: 768px) 50vw, 25vw"
         />
         {hoverImage && (
@@ -47,7 +57,7 @@ export function ProductCard({
             src={hoverImage}
             alt={`${name} — vista alternativa`}
             fill
-            className="object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+            className={`object-cover transition-opacity duration-500 ${showAlt ? "opacity-100" : "opacity-0"}`}
             sizes="(max-width: 768px) 50vw, 25vw"
           />
         )}
