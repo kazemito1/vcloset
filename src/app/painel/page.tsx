@@ -33,6 +33,7 @@ interface Lead {
   discountCents: number;
   totalCents: number;
   manualStatus: string | null;
+  paymentMethod: string;
   createdAt: string;
 }
 
@@ -88,7 +89,7 @@ export default function LeadsPanelPage() {
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"leads" | "pedidos">("leads");
+  const [tab, setTab] = useState<"leads" | "pedidos" | "pix">("leads");
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
   const filteredLeads = useMemo(() => {
@@ -113,6 +114,25 @@ export default function LeadsPanelPage() {
     const avgCents = count > 0 ? Math.round(totalCents / count) : 0;
     return { count, totalCents, avgCents };
   }, [filteredLeads]);
+
+  const pixLeads = useMemo(
+    () => filteredLeads.filter((l) => l.paymentMethod === "PIX"),
+    [filteredLeads]
+  );
+
+  const pixSummary = useMemo(() => {
+    let collectedCents = 0;
+    let pendingCents = 0;
+    for (const lead of pixLeads) {
+      const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
+      if (status === "PAGO" || status === "ENVIADO") {
+        collectedCents += lead.totalCents;
+      } else {
+        pendingCents += lead.totalCents;
+      }
+    }
+    return { count: pixLeads.length, collectedCents, pendingCents };
+  }, [pixLeads]);
 
   const loadLeads = useCallback(async () => {
     setLoadingLeads(true);
@@ -407,6 +427,16 @@ export default function LeadsPanelPage() {
           >
             Pedidos ({leads.length})
           </button>
+          <button
+            onClick={() => setTab("pix")}
+            className={`-mb-px border-b-2 pb-3 text-[11px] font-bold uppercase tracking-widest2 transition ${
+              tab === "pix"
+                ? "border-gold-400 text-gold-400"
+                : "border-transparent text-cream/50 hover:text-cream/80"
+            }`}
+          >
+            Pix ({pixLeads.length})
+          </button>
         </div>
 
         <div className="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-gold-400/15 bg-ink-soft px-5 py-4">
@@ -692,6 +722,79 @@ export default function LeadsPanelPage() {
               })}
             </div>
           )
+        )}
+
+        {tab === "pix" && (
+          <>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-lg border border-gold-400/15 bg-ink-soft p-5">
+                <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                  Pagamentos Pix
+                </span>
+                <p className="mt-1 text-2xl font-bold text-cream">{pixSummary.count}</p>
+              </div>
+              <div className="rounded-lg border border-emerald-400/30 bg-emerald-400/5 p-5">
+                <span className="block text-[10px] font-bold uppercase tracking-widest2 text-emerald-300/70">
+                  Valor arrecadado
+                </span>
+                <p className="mt-1 text-2xl font-bold text-emerald-300">
+                  {formatBRL(pixSummary.collectedCents)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-amber-400/30 bg-amber-400/5 p-5">
+                <span className="block text-[10px] font-bold uppercase tracking-widest2 text-amber-300/70">
+                  Aguardando pagamento
+                </span>
+                <p className="mt-1 text-2xl font-bold text-amber-300">
+                  {formatBRL(pixSummary.pendingCents)}
+                </p>
+              </div>
+            </div>
+
+            {pixLeads.length === 0 ? (
+              <p className="mt-10 text-center text-sm text-cream/50">
+                Nenhum pagamento via Pix registrado ainda. Assim que a integração com a
+                intermediadora estiver ativa, os pagamentos Pix aparecerão aqui automaticamente,
+                com o valor arrecadado somado acima e filtrável pelo período selecionado.
+              </p>
+            ) : (
+              <div className="mt-6 space-y-3">
+                {pixLeads.map((lead) => {
+                  const status = resolveOrderStatus(lead.createdAt, lead.manualStatus);
+                  return (
+                    <div
+                      key={lead.id}
+                      className="rounded-lg border border-gold-400/15 bg-ink-soft p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-cream">
+                            #{lead.id.slice(-6).toUpperCase()} · {lead.fullName}
+                          </p>
+                          <p className="mt-0.5 text-xs text-cream/50">
+                            {new Date(lead.createdAt).toLocaleString("pt-BR")}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="rounded-full border border-[#32BCAD]/40 bg-[#32BCAD]/10 px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 text-[#32BCAD]">
+                            Pix
+                          </span>
+                          <span
+                            className={`inline-block rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 ${STATUS_BADGE[status]}`}
+                          >
+                            {ORDER_STATUS_LABEL[status]}
+                          </span>
+                          <p className="text-sm font-bold text-gold-400">
+                            {formatBRL(lead.totalCents)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
     </main>
