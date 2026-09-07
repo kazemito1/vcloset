@@ -1,6 +1,7 @@
-// Status do pedido derivado do tempo:
-//   Aguardando pagamento → Pedido pago (após ORDER_AUTO_PAID_MINUTES, padrão 30 min)
-//   Pedido pago → Pedido enviado (após ORDER_AUTO_SHIPPED_MINUTES, padrão 6 h após o e-mail de pagamento confirmado)
+// Status do pedido derivado do tempo (a partir da criação do pedido):
+//   Aguardando pagamento → Pedido pago (aos 30 min) + e-mail "pagamento confirmado"
+//   Pedido pago → Pedido enviado (após 6 h) + e-mail "pedido enviado"
+// Os e-mails são disparados simultaneamente com a mudança de status no site.
 // Ajuste os prazos via variáveis de ambiente (em minutos).
 
 export type OrderStatus = "AGUARDANDO_PAGAMENTO" | "PAGO" | "ENVIADO";
