@@ -7,6 +7,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { CATEGORIES, NAV_GROUPS, STORE_NAME } from "@/lib/constants";
 import { useCartStore } from "@/store/cartStore";
 import { formatBRL } from "@/lib/format";
+import { SearchModal } from "./SearchModal";
 
 interface HeaderProps {
   settings?: { freeShippingCents: number };
@@ -22,6 +23,7 @@ export function Header({ settings }: HeaderProps) {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [cep, setCep] = useState("");
   const [cepSaved, setCepSaved] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
   const totalItems = useCartStore((s) => s.totalItems());
   const freeShippingLabel = settings ? formatBRL(settings.freeShippingCents) : "R$ 499";
@@ -192,8 +194,8 @@ export function Header({ settings }: HeaderProps) {
         </nav>
 
         <div className="absolute right-0 flex items-center gap-4">
-          <Link
-            href="/busca"
+          <button
+            onClick={() => setSearchOpen(true)}
             aria-label="Buscar produtos"
             className={`transition-colors hover:text-gold-600 ${
               pathname === "/busca" ? "text-gold-600" : "text-ink"
@@ -203,7 +205,7 @@ export function Header({ settings }: HeaderProps) {
               <circle cx="11" cy="11" r="7" strokeWidth="1.4" />
               <path d="M20 20l-4.35-4.35" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </Link>
+          </button>
           <Link
             href="/conta"
             aria-label="Minha Conta"
@@ -315,6 +317,7 @@ export function Header({ settings }: HeaderProps) {
           </Link>
         </nav>
       )}
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }
