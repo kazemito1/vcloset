@@ -211,6 +211,150 @@ const productImages: Record<string, string[]> = {
     "/products/sapato-oxford-verniz-preto-1.png",
     "/products/sapato-oxford-verniz-preto-2.png",
   ],
+  "alianca-classica-ouro-18k-2mm": [
+    "/products/alianca-classica-ouro-18k-2mm.png",
+    "/products/alianca-classica-ouro-18k-2mm-2.png",
+  ],
+  "alianca-anatomica-ouro-branco-18k-3mm": [
+    "/products/alianca-anatomica-ouro-branco-3mm.png",
+    "/products/alianca-anatomica-ouro-branco-3mm-2.png",
+  ],
+  "alianca-classica-ouro-rose-18k-4mm": [
+    "/products/alianca-classica-ouro-rose-4mm.png",
+    "/products/alianca-classica-ouro-rose-4mm-2.png",
+  ],
+  "alianca-trabalhada-com-diamantes-ouro-18k-5mm": [
+    "/products/alianca-cravejada-diamantes-ouro-18k-5mm.png",
+    "/products/alianca-cravejada-diamantes-ouro-18k-5mm-2.png",
+  ],
+  "alianca-prata-925-2mm": [
+    "/products/alianca-prata-925-2mm.png",
+    "/products/alianca-prata-925-2mm-2.png",
+  ],
+  "alianca-trabalhada-ouro-18k-6mm": [
+    "/products/alianca-trabalhada-ouro-18k-6mm.png",
+    "/products/alianca-trabalhada-ouro-18k-6mm-2.png",
+  ],
+  "anel-solitario-ouro-18k-diamante-20pts": [
+    "/products/anel-solitario-ouro-18k-diamante.png",
+    "/products/anel-solitario-ouro-18k-diamante-2.png",
+  ],
+  "anel-solitario-ouro-branco-18k-diamante-15pts": [
+    "/products/anel-solitario-ouro-branco-diamante.png",
+    "/products/anel-solitario-ouro-branco-diamante-2.png",
+  ],
+  "anel-solitario-prata-zirconia": [
+    "/products/anel-solitario-prata-zirconia.png",
+    "/products/anel-solitario-prata-zirconia-2.png",
+  ],
+  "anel-solitario-ouro-rose-18k-diamante-30pts": [
+    "/products/anel-solitario-ouro-rose-diamante.png",
+    "/products/anel-solitario-ouro-rose-diamante-2.png",
+  ],
+  "anel-solitario-ouro-18k-diamante-petite-10pts": [
+    "/products/anel-solitario-ouro-18k-diamante-petite.png",
+    "/products/anel-solitario-ouro-18k-diamante-petite-2.png",
+  ],
+  "anel-solitario-prata-zirconia-princesa": [
+    "/products/anel-solitario-prata-zirconia-princess.png",
+    "/products/anel-solitario-prata-zirconia-princess-2.png",
+  ],
+  "colar-ponto-de-luz-ouro-18k": [
+    "/products/colar-ponto-de-luz-ouro-18k.png",
+    "/products/colar-ponto-de-luz-ouro-18k-2.png",
+  ],
+  "brinco-argola-ouro-18k": [
+    "/products/brinco-argola-ouro-18k.png",
+    "/products/brinco-argola-ouro-18k-2.png",
+  ],
+  "pulseira-tenis-diamantes": [
+    "/products/pulseira-tenis-diamantes.png",
+    "/products/pulseira-tenis-diamantes-2.png",
+  ],
+  "relogio-feminino-aco-dourado": [
+    "/products/relogio-feminino-aco-dourado.png",
+    "/products/relogio-feminino-aco-dourado-2.png",
+  ],
+  "anel-eternity-diamantes-ouro-18k": [
+    "/products/anel-eternity-diamantes-ouro-18k.png",
+    "/products/anel-eternity-diamantes-ouro-18k-2.png",
+  ],
+  "anel-esmeralda-vintage-ouro-18k": [
+    "/products/anel-esmeralda-vintage-ouro-18k.png",
+    "/products/anel-esmeralda-vintage-ouro-18k-2.png",
+  ],
+  "anel-duplo-trancado-prata-925-zirconia": [
+    "/products/anel-duplo-trancado-prata-925-zirconia.png",
+    "/products/anel-duplo-trancado-prata-925-zirconia-2.png",
+  ],
+  "alianca-duo-fosco-polido-ouro-18k-3mm": [
+    "/products/alianca-duo-fosco-polido-ouro-18k-3mm.png",
+    "/products/alianca-duo-fosco-polido-ouro-18k-3mm-2.png",
+  ],
+  "alianca-tungstenio-preto-masculina": [
+    "/products/alianca-tungstenio-preto-masculina.png",
+    "/products/alianca-tungstenio-preto-masculina-2.png",
+  ],
+  "colar-riviera-diamantes-ouro-branco-18k": [
+    "/products/colar-riviera-diamantes-ouro-branco-18k.png",
+    "/products/colar-riviera-diamantes-ouro-branco-18k-2.png",
+  ],
+  "colar-estrela-prata-925-zirconia": [
+    "/products/colar-estrela-prata-925-zirconia.png",
+    "/products/colar-estrela-prata-925-zirconia-2.png",
+  ],
+  "brinco-argola-tubular-ouro-18k": [
+    "/products/brinco-argola-tubular-ouro-18k.png",
+    "/products/brinco-argola-tubular-ouro-18k-2.png",
+  ],
+  "brinco-solitario-diamante-ouro-branco-18k": [
+    "/products/brinco-solitario-diamante-ouro-branco-18k.png",
+    "/products/brinco-solitario-diamante-ouro-branco-18k-2.png",
+  ],
+  "brinco-gota-vazada-prata-925-zirconia": [
+    "/products/brinco-gota-vazada-prata-925-zirconia.png",
+    "/products/brinco-gota-vazada-prata-925-zirconia-2.png",
+  ],
+  "pulseira-coracao-ouro-rose-18k": [
+    "/products/pulseira-coracao-ouro-rose-18k.png",
+    "/products/pulseira-coracao-ouro-rose-18k-2.png",
+  ],
+  "pulseira-tenis-prata-925-zirconia": [
+    "/products/pulseira-tenis-prata-925-zirconia.png",
+    "/products/pulseira-tenis-prata-925-zirconia-2.png",
+  ],
+  "bracelete-martelado-ouro-18k": [
+    "/products/bracelete-martelado-ouro-18k.png",
+    "/products/bracelete-martelado-ouro-18k-2.png",
+  ],
+  "relogio-masculino-cronografo-aco-prata": [
+    "/products/relogio-masculino-cronografo-aco-prata.png",
+    "/products/relogio-masculino-cronografo-aco-prata-2.png",
+  ],
+  "relogio-feminino-slim-couro-branco-ouro-rose": [
+    "/products/relogio-feminino-slim-couro-branco-ouro-rose.png",
+    "/products/relogio-feminino-slim-couro-branco-ouro-rose-2.png",
+  ],
+  "chaveiro-couro-legitimo-cafe": [
+    "/products/chaveiro-couro-legitimo-cafe.png",
+    "/products/chaveiro-couro-legitimo-cafe-2.png",
+  ],
+  "oculos-de-sol-retangular-acetato-preto": [
+    "/products/oculos-sol-retangular-acetato-preto.png",
+    "/products/oculos-sol-retangular-acetato-preto-2.png",
+  ],
+  "porta-joias-veludo-bordo": [
+    "/products/porta-joias-veludo-bordo.png",
+    "/products/porta-joias-veludo-bordo-2.png",
+  ],
+  "carteira-couro-slim-preta": [
+    "/products/carteira-couro-slim-preta.png",
+    "/products/carteira-couro-slim-preta-2.png",
+  ],
+  "corrente-avulsa-ouro-18k-60cm": [
+    "/products/corrente-avulsa-ouro-18k-60cm.png",
+    "/products/corrente-avulsa-ouro-18k-60cm-2.png",
+  ],
 };
 
 async function main() {
