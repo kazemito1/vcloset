@@ -45,6 +45,52 @@
   }
 }
 
+/* Slide animado do carrossel da home: mesma cadência de 8s dos vídeos, com corte
+   entre duas cenas e a frase de efeito entrando no final do ciclo. */
+@keyframes vc-hero-zoom {
+  0% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1.16);
+  }
+}
+
+@keyframes vc-hero-cut-a {
+  0%,
+  46% {
+    opacity: 1;
+  }
+  56%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vc-hero-cut-b {
+  0%,
+  46% {
+    opacity: 0;
+  }
+  56%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes vc-hero-phrase {
+  0%,
+  66% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  82%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @layer base {
   body {
     @apply bg-neutral-50 text-ink font-body;
@@ -140,10 +186,30 @@
     animation: vc-clip-fade-b 8s ease-in-out infinite;
   }
 
+  .vc-hero-zoom {
+    animation: vc-hero-zoom 8s ease-out infinite;
+  }
+
+  .vc-hero-cut-a {
+    animation: vc-hero-cut-a 8s ease-in-out infinite;
+  }
+
+  .vc-hero-cut-b {
+    animation: vc-hero-cut-b 8s ease-in-out infinite;
+  }
+
+  .vc-hero-phrase {
+    animation: vc-hero-phrase 8s ease-out infinite;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .vc-clip-zoom,
     .vc-clip-fade-a,
-    .vc-clip-fade-b {
+    .vc-clip-fade-b,
+    .vc-hero-zoom,
+    .vc-hero-cut-a,
+    .vc-hero-cut-b,
+    .vc-hero-phrase {
       animation: none;
     }
   }
