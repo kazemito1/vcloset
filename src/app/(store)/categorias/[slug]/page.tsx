@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { parseProduct } from "@/lib/parseProduct";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { SubcategoryNav } from "@/components/product/SubcategoryNav";
+import { getSubcategoriesForCategory } from "@/lib/productSubcategories";
 
 export const revalidate = 0;
 
@@ -26,6 +28,7 @@ export default async function CategoryPage({ params }: Props) {
   });
 
   const parsed = products.map(parseProduct);
+  const subcategories = getSubcategoriesForCategory(category!.slug);
 
   return (
     <div className="container-page py-12 md:py-16">
@@ -36,6 +39,8 @@ export default async function CategoryPage({ params }: Props) {
         Explore nossa coleção de {category!.name.toLowerCase()} — peças
         exclusivas em ouro, prata e materiais nobres.
       </p>
+
+      <SubcategoryNav categorySlug={category!.slug} subcategories={subcategories} />
 
       {parsed.length === 0 ? (
         <p className="mt-12 text-ink/60">Nenhum produto disponível nesta categoria no momento.</p>
