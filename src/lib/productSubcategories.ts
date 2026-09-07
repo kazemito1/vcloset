@@ -32,6 +32,8 @@ export const SUBCATEGORIES_BY_CATEGORY: Record<string, Subcategory[]> = {
         "abotoadura",
         "caneta",
         "chaveiro",
+        "cinto",
+        "pasta",
       ],
     },
   ],
@@ -46,7 +48,7 @@ export const SUBCATEGORIES_BY_CATEGORY: Record<string, Subcategory[]> = {
     {
       slug: "carteiras-chaveiros",
       name: "Carteiras & Chaveiros",
-      keywords: ["carteira", "chaveiro"],
+      keywords: ["carteira", "chaveiro", "porta-cartoes"],
     },
     { slug: "oculos-de-sol", name: "Óculos de Sol", keywords: ["oculos"] },
     { slug: "porta-joias", name: "Porta-Joias", keywords: ["porta-joias"] },
