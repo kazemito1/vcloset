@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
   const leads = await prisma.lead.findMany({
     where: { email: customer.email },
     orderBy: { createdAt: "desc" },
-    take: 50,
   });
 
   // Dispara o e-mail de "Pedido enviado" para quem acabou de atingir o prazo
