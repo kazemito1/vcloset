@@ -1,6 +1,6 @@
 // Dispara os e-mails automáticos de mudança de status dos pedidos:
 //   → "Pedido pago"     (sendPaidEmail,     uma vez por lead)
-//   → "Pedido enviado"  (sendShippingEmail, uma vez por lead)
+//   → "Pedido enviado"  (sendShippingEmail, uma vez por lead, 6h após o e-mail de pagamento confirmado)
 // Chamado quando as listas de pedidos são carregadas (site ou painel), que é
 // o momento em que o status muda visivelmente. Falha no envio não bloqueia a
 // resposta — as flags (paidEmailSentAt / shippingEmailSentAt) só são gravadas
@@ -19,6 +19,8 @@ interface NotifiableLead {
   paidEmailSentAt: Date | null;
   shippingEmailSentAt: Date | null;
 }
+
+const AUTO_SHIPPED_MINUTES = Number(process.env.ORDER_AUTO_SHIPPED_MINUTES || 360);
 
 export async function notifyShippedOrders(
   leads: NotifiableLead[]
@@ -43,18 +45,22 @@ export async function notifyShippedOrders(
       }
     }
 
-    // 2) e-mail de pedido enviado (somente quando já está em ENVIADO)
-    if (status === "ENVIADO" && !lead.shippingEmailSentAt) {
-      try {
-        const result = await sendShippingEmail(lead.email, lead.fullName);
-        if (result.sent) {
-          await prisma.lead.update({
-            where: { id: lead.id },
-            data: { shippingEmailSentAt: new Date() },
-          });
+    // 2) e-mail de pedido enviado (6h após o e-mail de pagamento confirmado)
+    if (status === "ENVIADO" && !lead.shippingEmailSentAt && lead.paidEmailSentAt) {
+      const paidAt = new Date(lead.paidEmailSentAt).getTime();
+      const elapsedMs = Date.now() - paidAt;
+      if (elapsedMs >= AUTO_SHIPPED_MINUTES * 60 * 1000) {
+        try {
+          const result = await sendShippingEmail(lead.email, lead.fullName);
+          if (result.sent) {
+            await prisma.lead.update({
+              where: { id: lead.id },
+              data: { shippingEmailSentAt: new Date() },
+            });
+          }
+        } catch (err) {
+          console.error("[status-notify] falha ao notificar envio:", lead.id, err);
         }
-      } catch (err) {
-        console.error("[status-notify] falha ao notificar envio:", lead.id, err);
       }
     }
   }
