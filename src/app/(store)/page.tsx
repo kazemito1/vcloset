@@ -43,20 +43,20 @@ export default async function HomePage() {
   return (
     <div>
       {/* Faixa promocional */}
-      <section className="bg-cream border-y border-gold-300/30 py-3 md:py-4">
-        <div className="container-page flex items-center justify-center gap-4 md:gap-8 text-center">
-          <span className="hidden h-px w-10 bg-gold-400/50 md:block" aria-hidden="true" />
-          <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 font-serif text-ink">
-            <span className="text-xs uppercase tracking-[0.2em] text-gold-700 md:text-sm">
+      <section className="bg-gold-500 py-4 md:py-5">
+        <div className="container-page flex items-center justify-center gap-4 md:gap-10 text-center">
+          <span className="hidden h-px w-12 bg-cream/40 md:block" aria-hidden="true" />
+          <div className="flex flex-wrap items-baseline justify-center gap-x-3 gap-y-1 font-serif text-cream">
+            <span className="text-sm uppercase tracking-[0.22em] md:text-base">
               Coleção Outono Inverno
             </span>
-            <span className="mx-1 text-gold-400 md:mx-2">·</span>
+            <span className="mx-1 text-cream/60 md:mx-2">·</span>
             <span className="text-sm uppercase tracking-widest md:text-base">até</span>
-            <span className="text-xl font-medium tracking-tight text-gold-600 md:text-2xl">
+            <span className="text-2xl font-medium tracking-tight md:text-3xl">
               30% OFF
             </span>
           </div>
-          <span className="hidden h-px w-10 bg-gold-400/50 md:block" aria-hidden="true" />
+          <span className="hidden h-px w-12 bg-cream/40 md:block" aria-hidden="true" />
         </div>
       </section>
 
