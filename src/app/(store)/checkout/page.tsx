@@ -20,6 +20,18 @@ interface CepResponse {
   erro?: boolean;
 }
 
+interface FreightOption {
+  priceCents: number;
+  prazoDias: number;
+}
+
+interface FreightQuote {
+  pac: FreightOption;
+  sedex: FreightOption;
+}
+
+type ShippingChoice = "PAC" | "SEDEX" | null;
+
 const EMPTY_FORM: LeadData = {
   fullName: "",
   email: "",
@@ -40,6 +52,7 @@ const EMPTY_FORM: LeadData = {
 };
 
 const SAVED_CUSTOMER_KEY = "vcloset-customer-data";
+const FREE_SHIPPING_CENTS = 29900;
 
 // Campos que podem ser salvos no navegador para facilitar a próxima compra.
 // Dados de cartão nunca entram nessa lista.
@@ -88,6 +101,10 @@ export default function CheckoutPage() {
   } | null>(null);
   const [fetchingCep, setFetchingCep] = useState(false);
   const [cartReady, setCartReady] = useState(false);
+  const [frete, setFrete] = useState<FreightQuote | null>(null);
+  const [fetchingFrete, setFetchingFrete] = useState(false);
+  const [freteErro, setFreteErro] = useState<string | null>(null);
+  const [shippingChoice, setShippingChoice] = useState<ShippingChoice>(null);
 
   // aguarda a hidratação do carrinho persistido (zustand/persist)
   // e carrega dados salvos do cliente, se houver
@@ -103,11 +120,48 @@ export default function CheckoutPage() {
             SAVEABLE_FIELDS.map((field) => [field, parsed[field] ?? current[field]])
           ),
         }));
+        // CEP já salvo: consulta o frete automaticamente
+        if (parsed.cep) {
+          const digits = onlyDigits(parsed.cep);
+          if (digits.length === 8) {
+            void carregarFrete(digits);
+          }
+        }
       }
     } catch {
       // ignora JSON corrompido
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function carregarFrete(cepDigits: string) {
+    setFetchingFrete(true);
+    setFreteErro(null);
+    try {
+      const res = await fetch(`/api/frete?cep=${cepDigits}`);
+      if (!res.ok) throw new Error();
+      const data: FreightQuote = await res.json();
+      setFrete(data);
+      // Seleciona PAC por padrão (normalmente grátis acima de R$ 299)
+      setShippingChoice("PAC");
+    } catch {
+      setFrete(null);
+      setFreteErro("Não foi possível calcular o frete agora.");
+    } finally {
+      setFetchingFrete(false);
+    }
+  }
+
+  const shippingCents =
+    shippingChoice === "PAC"
+      ? totalCents >= FREE_SHIPPING_CENTS
+        ? 0
+        : (frete?.pac.priceCents ?? 0)
+      : shippingChoice === "SEDEX"
+        ? (frete?.sedex.priceCents ?? 0)
+        : 0;
+
+  const totalComFrete = finalTotalCents + shippingCents;
 
   function update(field: keyof LeadData, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -175,6 +229,8 @@ export default function CheckoutPage() {
       } finally {
         setFetchingCep(false);
       }
+
+      void carregarFrete(cep);
     }
   }
 
@@ -245,25 +301,23 @@ export default function CheckoutPage() {
 
   function inputClass(field: keyof LeadData) {
     const invalid = Boolean(errors[field]);
-    return `h-12 w-full rounded-lg border bg-ink px-4 text-sm text-cream placeholder:text-cream/30 outline-none transition focus:ring-2 ${
+    return `h-12 w-full rounded-lg border bg-white px-4 text-sm text-ink placeholder:text-ink/35 outline-none transition focus:ring-2 ${
       invalid
         ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-        : "border-gold-400/20 focus:border-gold-400 focus:ring-gold-400/30"
+        : "border-gold-400/30 focus:border-gold-500 focus:ring-gold-500/25"
     }`;
   }
 
   if (cartReady && items.length === 0) {
     return (
-      <div className="bg-ink py-24 text-center text-cream">
+      <div className="bg-neutral-50 py-24 text-center text-ink">
         <h1 className="font-serif text-3xl tracking-widest2">
-          <span className="text-gold-400">V</span>CLOSET
+          <span className="text-gold-600">V</span>CLOSET
         </h1>
-        <p className="mt-6 text-sm text-cream/60">
-          Seu carrinho está vazio.
-        </p>
+        <p className="mt-6 text-sm text-ink/60">Seu carrinho está vazio.</p>
         <Link
           href="/"
-          className="mt-8 inline-flex h-11 items-center justify-center rounded-full bg-gold-400 px-8 text-xs font-bold uppercase tracking-widest2 text-ink transition hover:bg-gold-300"
+          className="mt-8 inline-flex h-11 items-center justify-center rounded-full bg-gold-500 px-8 text-xs font-bold uppercase tracking-widest2 text-white transition hover:bg-gold-600"
         >
           Continuar comprando
         </Link>
@@ -272,10 +326,10 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="bg-ink text-cream">
+    <div className="bg-neutral-50 text-ink">
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
         <header className="mb-10 text-center">
-          <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-cream/50">
+          <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-ink/50">
             Checkout
           </p>
           <img
@@ -284,18 +338,18 @@ export default function CheckoutPage() {
             className="mx-auto mt-3 h-auto w-64 sm:w-80"
           />
           <div className="mx-auto mt-4 flex items-center justify-center gap-3">
-            <span className="h-px w-16 bg-gold-400/20" />
-            <span className="h-1.5 w-1.5 rotate-45 border border-gold-400" />
-            <span className="h-px w-16 bg-gold-400/20" />
+            <span className="h-px w-16 bg-gold-500/30" />
+            <span className="h-1.5 w-1.5 rotate-45 border border-gold-500" />
+            <span className="h-px w-16 bg-gold-500/30" />
           </div>
-          <p className="mx-auto mt-5 max-w-sm text-sm leading-relaxed text-cream/60">
+          <p className="mx-auto mt-5 max-w-sm text-sm leading-relaxed text-ink/60">
             Preencha todos os campos abaixo para concluir o seu pagamento com
             segurança.
           </p>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-10" noValidate>
-          <section>
+          <section className="rounded-xl border border-gold-400/20 bg-white p-6 shadow-sm sm:p-8">
             <SectionTitle>01 &middot; Dados pessoais</SectionTitle>
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -349,7 +403,7 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          <section>
+          <section className="rounded-xl border border-gold-400/20 bg-white p-6 shadow-sm sm:p-8">
             <SectionTitle>02 &middot; Endereço de entrega</SectionTitle>
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="relative">
@@ -362,7 +416,7 @@ export default function CheckoutPage() {
                   className={inputClass("cep")}
                 />
                 {fetchingCep && (
-                  <span className="absolute right-3 top-9 text-xs italic text-cream/50">
+                  <span className="absolute right-3 top-9 text-xs italic text-ink/50">
                     buscando...
                   </span>
                 )}
@@ -442,9 +496,49 @@ export default function CheckoutPage() {
                 <FieldError message={errors.state} />
               </div>
             </div>
+
+            <div className="mt-8">
+              <SectionTitle>Frete estimado</SectionTitle>
+              {fetchingFrete ? (
+                <p className="text-sm text-ink/50">Calculando frete...</p>
+              ) : freteErro ? (
+                <p className="text-sm text-red-500">{freteErro}</p>
+              ) : !frete ? (
+                <p className="text-sm text-ink/50">
+                  Digite o CEP acima para consultar o frete estimado (PAC e
+                  SEDEX).
+                </p>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <ShippingOption
+                    id="pac"
+                    name="PAC"
+                    prazo={`${frete.pac.prazoDias} dias úteis`}
+                    priceCents={totalCents >= FREE_SHIPPING_CENTS ? 0 : frete.pac.priceCents}
+                    free={totalCents >= FREE_SHIPPING_CENTS}
+                    selected={shippingChoice === "PAC"}
+                    onSelect={() => setShippingChoice("PAC")}
+                  />
+                  <ShippingOption
+                    id="sedex"
+                    name="SEDEX"
+                    prazo={`${frete.sedex.prazoDias} dias úteis`}
+                    priceCents={frete.sedex.priceCents}
+                    free={false}
+                    selected={shippingChoice === "SEDEX"}
+                    onSelect={() => setShippingChoice("SEDEX")}
+                  />
+                </div>
+              )}
+              {totalCents < FREE_SHIPPING_CENTS && (
+                <p className="mt-3 text-xs text-ink/50">
+                  Frete PAC grátis em compras acima de {formatBRL(FREE_SHIPPING_CENTS)}.
+                </p>
+              )}
+            </div>
           </section>
 
-          <section>
+          <section className="rounded-xl border border-gold-400/20 bg-white p-6 shadow-sm sm:p-8">
             <SectionTitle>03 &middot; Pagamento</SectionTitle>
             <div className="grid gap-5 sm:grid-cols-3">
               <div className="sm:col-span-3">
@@ -499,10 +593,10 @@ export default function CheckoutPage() {
                 >
                   <option value="">Selecione...</option>
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
-                    <option key={n} value={String(n)} className="bg-ink">
+                    <option key={n} value={String(n)}>
                       {n === 1
-                        ? `À vista — ${formatBRL(finalTotalCents)}`
-                        : `${n}x de ${formatBRL(Math.round(finalTotalCents / n))} sem juros`}
+                        ? `À vista — ${formatBRL(totalComFrete)}`
+                        : `${n}x de ${formatBRL(Math.round(totalComFrete / n))} sem juros`}
                     </option>
                   ))}
                 </select>
@@ -519,54 +613,62 @@ export default function CheckoutPage() {
                 onChange={(e) => update("notes", e.target.value)}
                 placeholder="Observações para entrega ou para o envio do seu produto, solicite aqui"
                 rows={4}
-                className="w-full rounded-lg border border-gold-400/20 bg-ink px-4 py-3 text-sm text-cream placeholder:text-cream/30 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-400/30"
+                className="w-full rounded-lg border border-gold-400/30 bg-white px-4 py-3 text-sm text-ink placeholder:text-ink/35 outline-none transition focus:border-gold-500 focus:ring-2 focus:ring-gold-500/25"
               />
             </div>
           </section>
 
-          <section>
+          <section className="rounded-xl border border-gold-400/20 bg-white p-6 shadow-sm sm:p-8">
             <SectionTitle>04 &middot; Resumo do pedido</SectionTitle>
-            <div className="space-y-3 rounded-lg border border-gold-400/15 bg-ink-soft p-5 text-sm">
+            <div className="space-y-3 rounded-lg border border-gold-400/15 bg-cream p-5 text-sm">
               {items.map((item, idx) => (
                 <div key={`${item.productId}-${item.variantLabel ?? ""}-${idx}`} className="flex items-center justify-between gap-4">
-                  <span className="text-cream/90">
+                  <span className="text-ink/90">
                     {item.name}
                     {item.variantLabel ? ` — ${item.variantLabel}` : ""}
-                    <span className="text-cream/50"> × {item.quantity}</span>
+                    <span className="text-ink/50"> × {item.quantity}</span>
                   </span>
-                  <span className="whitespace-nowrap text-cream/90">
+                  <span className="whitespace-nowrap text-ink/90">
                     {formatBRL(item.unitPriceCents * item.quantity)}
                   </span>
                 </div>
               ))}
 
-              <div className="h-px bg-gold-400/15" />
+              <div className="h-px bg-gold-500/20" />
 
               <div className="flex items-center justify-between">
-                <span className="text-cream/60">Subtotal</span>
-                <span className="text-cream/90">{formatBRL(totalCents)}</span>
+                <span className="text-ink/60">Subtotal</span>
+                <span className="text-ink/90">{formatBRL(totalCents)}</span>
               </div>
 
               {discountCents > 0 && (
                 <div className="flex items-center justify-between">
-                  <span className="text-cream/60">Desconto</span>
-                  <span className="text-emerald-400">-{formatBRL(discountCents)}</span>
+                  <span className="text-ink/60">Desconto</span>
+                  <span className="text-emerald-700">-{formatBRL(discountCents)}</span>
                 </div>
               )}
 
               <div className="flex items-center justify-between">
-                <span className="text-cream/60">Frete</span>
-                <span className="font-medium text-gold-400">Grátis</span>
+                <span className="text-ink/60">Frete</span>
+                {shippingChoice === null ? (
+                  <span className="text-ink/50">
+                    {frete ? "Selecione acima" : "Informe o CEP"}
+                  </span>
+                ) : shippingCents === 0 ? (
+                  <span className="font-medium text-gold-700">Grátis</span>
+                ) : (
+                  <span className="text-ink/90">{formatBRL(shippingCents)}</span>
+                )}
               </div>
 
-              <div className="h-px bg-gold-400/15" />
+              <div className="h-px bg-gold-500/20" />
 
               <div className="flex items-center justify-between text-base font-semibold">
                 <span>Total</span>
-                <span className="text-gold-400">{formatBRL(finalTotalCents)}</span>
+                <span className="text-gold-700">{formatBRL(totalComFrete)}</span>
               </div>
-              <p className="text-xs text-cream/50">
-                Em até 12x de {formatBRL(Math.round(finalTotalCents / 12))} sem juros no cartão.
+              <p className="text-xs text-ink/50">
+                Em até 12x de {formatBRL(Math.round(totalComFrete / 12))} sem juros no cartão.
               </p>
             </div>
           </section>
@@ -575,8 +677,8 @@ export default function CheckoutPage() {
             <div
               className={`rounded-lg px-4 py-3 text-sm ${
                 status.type === "success"
-                  ? "border border-emerald-700 bg-emerald-950/30 text-emerald-400"
-                  : "border border-red-800 bg-red-950/30 text-red-400"
+                  ? "border border-emerald-600 bg-emerald-50 text-emerald-700"
+                  : "border border-red-500 bg-red-50 text-red-600"
               }`}
             >
               {status.message}
@@ -587,27 +689,27 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="h-12 w-full rounded-full bg-gold-400 text-xs font-bold uppercase tracking-widest2 text-ink shadow-gold transition hover:bg-gold-300 disabled:opacity-60 disabled:hover:bg-gold-400"
+              className="h-12 w-full rounded-full bg-gold-500 text-xs font-bold uppercase tracking-widest2 text-white shadow-gold transition hover:bg-gold-600 disabled:opacity-60 disabled:hover:bg-gold-500"
             >
               {submitting ? "Processando..." : "Concluir Pagamento"}
             </button>
 
-            <label className="flex cursor-pointer items-center justify-center gap-2 text-xs text-cream/60">
+            <label className="flex cursor-pointer items-center justify-center gap-2 text-xs text-ink/60">
               <input
                 type="checkbox"
                 checked={saveData}
                 onChange={(e) => setSaveData(e.target.checked)}
-                className="h-4 w-4 accent-gold-400"
+                className="h-4 w-4 accent-gold-600"
               />
               Salvar meus dados para uma próxima compra
             </label>
 
             <div className="flex flex-wrap items-center justify-center gap-2">
               {/* Visa */}
-              <PayBadge label="VISA" className="text-xs font-extrabold italic tracking-tighter text-white" />
+              <PayBadge label="VISA" className="text-xs font-extrabold italic tracking-tighter text-ink/80" />
 
               {/* Mastercard */}
-              <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/15 bg-ink-soft">
+              <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/25 bg-white">
                 <svg viewBox="0 0 48 30" className="h-4" aria-label="Mastercard" role="img">
                   <circle cx="15" cy="15" r="10" fill="#EB001B" />
                   <circle cx="33" cy="15" r="10" fill="#F79E1B" />
@@ -616,8 +718,8 @@ export default function CheckoutPage() {
               </span>
 
               {/* Elo */}
-              <span className="flex h-7 w-12 items-center justify-center gap-0.5 rounded-md border border-gold-400/15 bg-ink-soft">
-                <span className="text-xs font-extrabold lowercase italic tracking-tight text-white">elo</span>
+              <span className="flex h-7 w-12 items-center justify-center gap-0.5 rounded-md border border-gold-400/25 bg-white">
+                <span className="text-xs font-extrabold lowercase italic tracking-tight text-ink/80">elo</span>
                 <span className="flex flex-col gap-0.5">
                   <span className="flex gap-0.5">
                     <span className="h-1 w-1 rounded-full bg-[#FFCB05]" />
@@ -630,8 +732,8 @@ export default function CheckoutPage() {
               </span>
 
               {/* Discover */}
-              <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/15 bg-ink-soft">
-                <span className="text-[8px] font-extrabold tracking-tight text-white">
+              <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/25 bg-white">
+                <span className="text-[8px] font-extrabold tracking-tight text-ink/80">
                   DISC<span className="text-[#FF6000]">O</span>VER
                 </span>
               </span>
@@ -642,12 +744,12 @@ export default function CheckoutPage() {
               </span>
 
               {/* Pix */}
-              <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/15 bg-ink-soft">
+              <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/25 bg-white">
                 <span className="text-xs font-extrabold lowercase tracking-tight text-[#32BCAD]">pix</span>
               </span>
             </div>
 
-            <p className="flex items-center justify-center gap-2 text-center text-[11px] tracking-wide text-cream/50">
+            <p className="flex items-center justify-center gap-2 text-center text-[11px] tracking-wide text-ink/50">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -656,7 +758,7 @@ export default function CheckoutPage() {
                 strokeWidth="1.75"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="h-3.5 w-3.5 shrink-0 text-gold-400"
+                className="h-3.5 w-3.5 shrink-0 text-gold-600"
                 aria-hidden="true"
               >
                 <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
@@ -684,6 +786,44 @@ export default function CheckoutPage() {
   );
 }
 
+function ShippingOption({
+  id,
+  name,
+  prazo,
+  priceCents,
+  free,
+  selected,
+  onSelect,
+}: {
+  id: string;
+  name: string;
+  prazo: string;
+  priceCents: number;
+  free: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left transition ${
+        selected
+          ? "border-gold-500 bg-gold-500/5 ring-2 ring-gold-500/25"
+          : "border-gold-400/25 bg-white hover:border-gold-500/60"
+      }`}
+    >
+      <span>
+        <span className="block text-sm font-semibold text-ink">{name}</span>
+        <span className="block text-xs text-ink/50">até {prazo}</span>
+      </span>
+      <span className={`text-sm font-semibold ${free ? "text-gold-700" : "text-ink"}`}>
+        {free ? "Grátis" : formatBRL(priceCents)}
+      </span>
+    </button>
+  );
+}
+
 function PayBadge({
   label,
   className,
@@ -692,7 +832,7 @@ function PayBadge({
   className?: string;
 }) {
   return (
-    <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/15 bg-ink-soft">
+    <span className="flex h-7 w-12 items-center justify-center rounded-md border border-gold-400/25 bg-white">
       <span className={className}>{label}</span>
     </span>
   );
@@ -701,17 +841,17 @@ function PayBadge({
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-6 flex items-center gap-4">
-      <h2 className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.3em] text-cream">
+      <h2 className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.3em] text-ink">
         {children}
       </h2>
-      <span className="h-px flex-1 bg-gold-400/15" />
+      <span className="h-px flex-1 bg-gold-500/25" />
     </div>
   );
 }
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-cream/50">
+    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-ink/60">
       {children}
     </label>
   );
@@ -719,5 +859,5 @@ function Label({ children }: { children: React.ReactNode }) {
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="mt-1 text-xs text-red-400">{message}</p>;
+  return <p className="mt-1 text-xs text-red-500">{message}</p>;
 }
