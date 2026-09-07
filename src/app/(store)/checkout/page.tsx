@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCartStore } from "@/store/cartStore";
 import { formatBRL } from "@/lib/format";
+import { TURNSTILE_SITE_KEY } from "@/lib/constants";
 import { TurnstileWidget } from "@/components/checkout/TurnstileWidget";
 import {
   validateLead,
@@ -108,12 +109,10 @@ export default function CheckoutPage() {
   const [freteErro, setFreteErro] = useState<string | null>(null);
   const [shippingChoice, setShippingChoice] = useState<ShippingChoice>(null);
   const [payMethod, setPayMethod] = useState<"CARTAO" | "PIX">("CARTAO");
-  // Cloudflare Turnstile (ativado quando NEXT_PUBLIC_TURNSTILE_SITE_KEY existe)
+  // Cloudflare Turnstile (ativa quando há Site Key configurada)
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaKey, setCaptchaKey] = useState(0);
-  const captchaObrigatorio = Boolean(
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-  );
+  const captchaObrigatorio = Boolean(TURNSTILE_SITE_KEY);
 
   // aguarda a hidratação do carrinho persistido (zustand/persist)
   // e carrega dados salvos do cliente, se houver

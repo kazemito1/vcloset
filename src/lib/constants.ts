@@ -33,3 +33,8 @@ export const STORE_NAME = "V.CLOSET";
 
 export const WHATSAPP_NUMBER = "5521995709075";
 export const WHATSAPP_MESSAGE = "Olá! Visitei o site da V.CLOSET e me interessei por um produto.";
+
+// Cloudflare Turnstile (captcha do checkout). A Site Key é pública e vai
+// embutida no bundle do cliente — preferir a env var, com fallback fixo.
+export const TURNSTILE_SITE_KEY =
+  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAEsAz1et-kdojxAd";

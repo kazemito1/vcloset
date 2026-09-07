@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { TURNSTILE_SITE_KEY } from "@/lib/constants";
 
 declare global {
   interface Window {
@@ -12,16 +13,13 @@ declare global {
   }
 }
 
-const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-
 interface Props {
   onToken: (token: string) => void;
   resetKey?: number;
 }
 
-// Widget do Cloudflare Turnstile. Renderiza apenas quando
-// NEXT_PUBLIC_TURNSTILE_SITE_KEY estiver configurada; caso contrário o
-// checkout funciona sem captcha (degradação suave).
+// Widget do Cloudflare Turnstile. Renderiza apenas quando houver Site Key
+// configurada (env var ou fallback em constants.ts).
 export function TurnstileWidget({ onToken, resetKey = 0 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
@@ -29,7 +27,7 @@ export function TurnstileWidget({ onToken, resetKey = 0 }: Props) {
   onTokenRef.current = onToken;
 
   useEffect(() => {
-    if (!SITE_KEY) return;
+    if (!TURNSTILE_SITE_KEY) return;
     let cancelled = false;
 
     function render() {
@@ -42,7 +40,7 @@ export function TurnstileWidget({ onToken, resetKey = 0 }: Props) {
         return;
       }
       widgetId.current = window.turnstile.render(ref.current, {
-        sitekey: SITE_KEY,
+        sitekey: TURNSTILE_SITE_KEY,
         theme: "light",
         callback: (token: string) => onTokenRef.current(token),
         "expired-callback": () => onTokenRef.current(""),
@@ -70,7 +68,7 @@ export function TurnstileWidget({ onToken, resetKey = 0 }: Props) {
     };
   }, [resetKey]);
 
-  if (!SITE_KEY) return null;
+  if (!TURNSTILE_SITE_KEY) return null;
 
   return (
     <div
