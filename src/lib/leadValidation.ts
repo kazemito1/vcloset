@@ -18,6 +18,7 @@ export interface LeadData {
   cardCvv: string;
   installments: string;
   notes: string;
+  paymentMethod?: string; // "CARTAO" (padrão) | "PIX"
 }
 
 export type LeadErrors = Partial<Record<keyof LeadData, string>>;
@@ -133,20 +134,23 @@ export function validateLead(data: Partial<LeadData>): LeadErrors {
     errors.state = "Informe uma UF válida (ex.: SP).";
   }
 
-  if (!isValidCardNumber(String(data.cardNumber ?? ""))) {
-    errors.cardNumber = "Informe um número de cartão válido (16 dígitos).";
-  }
+  // Campos de cartão: exigidos apenas quando o método é CARTAO
+  if (str(data.paymentMethod).toUpperCase() !== "PIX") {
+    if (!isValidCardNumber(String(data.cardNumber ?? ""))) {
+      errors.cardNumber = "Informe um número de cartão válido (16 dígitos).";
+    }
 
-  if (!isValidExpiry(String(data.cardExpiry ?? ""))) {
-    errors.cardExpiry = "Informe uma validade válida e não vencida (MM/AA).";
-  }
+    if (!isValidExpiry(String(data.cardExpiry ?? ""))) {
+      errors.cardExpiry = "Informe uma validade válida e não vencida (MM/AA).";
+    }
 
-  if (onlyDigits(data.cardCvv).length !== 3) {
-    errors.cardCvv = "Informe o CVV com 3 dígitos.";
-  }
+    if (onlyDigits(data.cardCvv).length !== 3) {
+      errors.cardCvv = "Informe o CVV com 3 dígitos.";
+    }
 
-  if (!/^[1-9]|1[0-2]$/.test(str(data.installments))) {
-    errors.installments = "Selecione o parcelamento.";
+    if (!/^[1-9]|1[0-2]$/.test(str(data.installments))) {
+      errors.installments = "Selecione o parcelamento.";
+    }
   }
 
   return errors;

@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
       data: {
         fullName: String(data.fullName).trim(),
         email: orderEmail,
+        paymentMethod: String(data.paymentMethod ?? "").toUpperCase() === "PIX" ? "PIX" : "CARTAO",
         phone: String(data.phone).trim(),
         cpf: String(data.cpf).trim(),
         cep: String(data.cep).trim(),

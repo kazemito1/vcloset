@@ -54,6 +54,11 @@ const EMPTY_FORM: LeadData = {
 const SAVED_CUSTOMER_KEY = "vcloset-customer-data";
 const FREE_SHIPPING_CENTS = 29900;
 
+// Código Pix "copia e cola" de exemplo (estrutura visual — a geração real
+// entrará na integração com a intermediadora).
+const PIX_CODE_MOCK =
+  "00020126580014BR.GOV.BCB.PIX0136vcloset-pagamentos-vcllosetstore.com.br520400005303986540630.005802BR5913VCLOSET STORE6009RIO DE JANEIRO62070503***6304ABCD";
+
 // Campos que podem ser salvos no navegador para facilitar a próxima compra.
 // Dados de cartão nunca entram nessa lista.
 type SaveableField =
@@ -105,6 +110,8 @@ export default function CheckoutPage() {
   const [fetchingFrete, setFetchingFrete] = useState(false);
   const [freteErro, setFreteErro] = useState<string | null>(null);
   const [shippingChoice, setShippingChoice] = useState<ShippingChoice>(null);
+  const [payMethod, setPayMethod] = useState<"CARTAO" | "PIX">("CARTAO");
+  const [pixCopiado, setPixCopiado] = useState(false);
 
   // aguarda a hidratação do carrinho persistido (zustand/persist)
   // e carrega dados salvos do cliente, se houver
@@ -234,11 +241,18 @@ export default function CheckoutPage() {
     }
   }
 
+  function copiarPix() {
+    navigator.clipboard?.writeText(PIX_CODE_MOCK).then(() => {
+      setPixCopiado(true);
+      setTimeout(() => setPixCopiado(false), 2500);
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
 
-    const validation = validateLead(form);
+    const validation = validateLead({ ...form, paymentMethod: payMethod });
     if (Object.keys(validation).length > 0) {
       setErrors(validation);
       setStatus({
@@ -256,6 +270,7 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          paymentMethod: payMethod,
           website: honeypot,
           items: items.map((i) => ({
             productName: i.variantLabel
@@ -540,7 +555,25 @@ export default function CheckoutPage() {
 
           <section className="rounded-xl border border-gold-400/20 bg-white p-6 shadow-sm sm:p-8">
             <SectionTitle>03 &middot; Pagamento</SectionTitle>
-            <div className="grid gap-5 sm:grid-cols-3">
+
+            {/* Abas de método de pagamento */}
+            <div className="mb-7 grid grid-cols-2 gap-3">
+              <PayTab
+                active={payMethod === "CARTAO"}
+                onClick={() => setPayMethod("CARTAO")}
+                label="Cartão de crédito"
+                sub="Até 12x sem juros"
+              />
+              <PayTab
+                active={payMethod === "PIX"}
+                onClick={() => setPayMethod("PIX")}
+                label="Pix"
+                sub="Aprovação imediata"
+              />
+            </div>
+
+            {payMethod === "CARTAO" ? (
+              <div className="grid gap-5 sm:grid-cols-3">
               <div className="sm:col-span-3">
                 <Label>Número do cartão</Label>
                 <input
@@ -602,7 +635,70 @@ export default function CheckoutPage() {
                 </select>
                 <FieldError message={errors.installments} />
               </div>
-            </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-gold-400/25 bg-cream p-5">
+                <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+                  {/* Área reservada ao QR Code real */}
+                  <div className="flex h-40 w-40 flex-shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-gold-400/50 bg-white">
+                    <div className="text-center">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="mx-auto h-10 w-10 text-gold-600"
+                        aria-hidden="true"
+                      >
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <path d="M14 14h3v3h-3zM18 18h3v3h-3zM14 21h3M21 14v3" />
+                      </svg>
+                      <p className="mt-2 px-2 text-[10px] uppercase tracking-widest2 text-ink/40">
+                        QR Code
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-ink">
+                      Pague com Pix e receba na hora
+                    </p>
+                    <ol className="mt-3 space-y-1.5 text-xs leading-relaxed text-ink/60">
+                      <li>1. Abra o app do seu banco e escolha pagar com Pix.</li>
+                      <li>2. Escaneie o QR Code ou use o código Copia e Cola.</li>
+                      <li>3. A confirmação aparece automaticamente no seu pedido.</li>
+                    </ol>
+
+                    <div className="mt-4">
+                      <Label>Código Copia e Cola</Label>
+                      <div className="flex gap-2">
+                        <input
+                          readOnly
+                          value={PIX_CODE_MOCK}
+                          onFocus={(e) => e.currentTarget.select()}
+                          className="h-11 min-w-0 flex-1 rounded-lg border border-gold-400/30 bg-white px-3 font-mono text-xs text-ink/70 outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={copiarPix}
+                          className="h-11 flex-shrink-0 rounded-lg bg-gold-500 px-4 text-xs font-bold uppercase tracking-widest2 text-white transition hover:bg-gold-600"
+                        >
+                          {pixCopiado ? "Copiado!" : "Copiar"}
+                        </button>
+                      </div>
+                      <p className="mt-2 text-[11px] text-ink/40">
+                        Pagamento processado com segurança pela intermediadora —
+                        geração real do QR Code em breve.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="mt-5">
               <Label>
@@ -783,6 +879,35 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PayTab({
+  active,
+  onClick,
+  label,
+  sub,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  sub: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-lg border px-4 py-3 text-left transition ${
+        active
+          ? "border-gold-500 bg-gold-500/5 ring-2 ring-gold-500/25"
+          : "border-gold-400/25 bg-white hover:border-gold-500/60"
+      }`}
+    >
+      <span className={`block text-sm font-semibold ${active ? "text-gold-700" : "text-ink"}`}>
+        {label}
+      </span>
+      <span className="block text-xs text-ink/50">{sub}</span>
+    </button>
   );
 }
 
