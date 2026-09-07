@@ -18,7 +18,7 @@ function getBadges(freeShippingCents?: number) {
   },
   {
     label: "Parcelamento sem juros",
-    description: "Em até 6x no cartão",
+    description: "Em até 12x no cartão",
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path
