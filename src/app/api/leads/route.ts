@@ -30,6 +30,21 @@ interface IncomingItem {
   image?: unknown;
 }
 
+// Cloudflare Turnstile: valida o token do widget quando TURNSTILE_SECRET_KEY
+// estiver configurada. Sem a chave, a verificação é pulada (degradação suave).
+async function verifyTurnstile(token: unknown, ip: string): Promise<boolean> {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) return true;
+  if (typeof token !== "string" || token === "") return false;
+  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ secret, response: token, remoteip: ip }),
+  });
+  const result = (await res.json()) as { success?: boolean };
+  return result.success === true;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const ip =
@@ -46,6 +61,14 @@ export async function POST(req: NextRequest) {
     // honeypot: campo oculto só é preenchido por bots — responde sucesso sem salvar
     if (typeof body.website === "string" && body.website.trim() !== "") {
       return NextResponse.json({ success: true });
+    }
+
+    const captchaOk = await verifyTurnstile(body.turnstileToken, ip);
+    if (!captchaOk) {
+      return NextResponse.json(
+        { error: "Verificação de segurança falhou. Confirme o captcha e tente novamente." },
+        { status: 400 }
+      );
     }
 
     const data: Partial<LeadData> = body;

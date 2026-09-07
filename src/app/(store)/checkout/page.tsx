@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCartStore } from "@/store/cartStore";
 import { formatBRL } from "@/lib/format";
+import { TurnstileWidget } from "@/components/checkout/TurnstileWidget";
 import {
   validateLead,
   onlyDigits,
@@ -107,6 +108,12 @@ export default function CheckoutPage() {
   const [freteErro, setFreteErro] = useState<string | null>(null);
   const [shippingChoice, setShippingChoice] = useState<ShippingChoice>(null);
   const [payMethod, setPayMethod] = useState<"CARTAO" | "PIX">("CARTAO");
+  // Cloudflare Turnstile (ativado quando NEXT_PUBLIC_TURNSTILE_SITE_KEY existe)
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const captchaObrigatorio = Boolean(
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+  );
 
   // aguarda a hidratação do carrinho persistido (zustand/persist)
   // e carrega dados salvos do cliente, se houver
@@ -258,6 +265,14 @@ export default function CheckoutPage() {
     }
     setErrors({});
 
+    if (captchaObrigatorio && !captchaToken) {
+      setStatus({
+        type: "error",
+        message: "Confirme a verificação de segurança antes de continuar.",
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const res = await fetch("/api/leads", {
@@ -269,6 +284,7 @@ export default function CheckoutPage() {
           website: honeypot,
           items: buildItemsPayload(),
           discountCents,
+          turnstileToken: captchaToken,
         }),
       });
 
@@ -284,6 +300,9 @@ export default function CheckoutPage() {
         type: "error",
         message: err instanceof Error ? err.message : "Erro ao enviar.",
       });
+      // token do Turnstile é de uso único: renova após falha
+      setCaptchaToken("");
+      setCaptchaKey((k) => k + 1);
       setSubmitting(false);
     }
   }
@@ -337,6 +356,15 @@ export default function CheckoutPage() {
     setErrors({});
     setStatus(null);
 
+    if (captchaObrigatorio && !captchaToken) {
+      e.preventDefault();
+      setStatus({
+        type: "error",
+        message: "Confirme a verificação de segurança antes de continuar.",
+      });
+      return;
+    }
+
     void (async () => {
       setSubmitting(true);
       try {
@@ -349,6 +377,7 @@ export default function CheckoutPage() {
             website: honeypot,
             items: buildItemsPayload(),
             discountCents,
+            turnstileToken: captchaToken,
           }),
         });
         const data = await res.json();
@@ -365,6 +394,9 @@ export default function CheckoutPage() {
               ? err.message
               : "Erro ao registrar o pedido.",
         });
+        // token do Turnstile é de uso único: renova após falha
+        setCaptchaToken("");
+        setCaptchaKey((k) => k + 1);
       } finally {
         setSubmitting(false);
       }
@@ -843,6 +875,10 @@ export default function CheckoutPage() {
           )}
 
           <div className="space-y-5">
+            <TurnstileWidget
+              onToken={setCaptchaToken}
+              resetKey={captchaKey}
+            />
             <button
               type="submit"
               disabled={submitting}
