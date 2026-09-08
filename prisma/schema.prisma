@@ -257,6 +257,14 @@ model BlockedCard {
   createdAt DateTime @default(now())
 }
 
+// IPs bloqueados manualmente pelo lojista no painel. Qualquer tentativa de
+// pedido vinda de um IP bloqueado recebe a tela de recusa automaticamente.
+model BlockedIp {
+  id        String   @id @default(cuid())
+  ip        String   @unique
+  createdAt DateTime @default(now())
+}
+
 // Conta do cliente final (checkout/carrinho): login para acompanhar pedidos.
 // Os pedidos continuam no model Lead; a associação é feita pelo e-mail.
 model Customer {

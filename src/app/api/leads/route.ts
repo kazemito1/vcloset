@@ -30,6 +30,19 @@ interface IncomingItem {
   image?: unknown;
 }
 
+// Normaliza o IP do header: remove porta/zone-id quando presentes
+// (ex.: "179.x.x.x:52314" ou "fe80::1%eth0").
+function normalizeIp(raw: string): string {
+  let ip = raw.trim();
+  const percent = ip.indexOf("%");
+  if (percent !== -1) ip = ip.slice(0, percent);
+  if ((ip.match(/:/g) ?? []).length === 1) {
+    // IPv4 com porta (não confundir com IPv6, que tem múltiplos ":")
+    ip = ip.split(":")[0];
+  }
+  return ip;
+}
+
 // Cloudflare Turnstile: valida o token do widget quando TURNSTILE_SECRET_KEY
 // estiver configurada. Sem a chave, a verificação é pulada (degradação suave).
 async function verifyTurnstile(token: unknown, ip: string): Promise<boolean> {
@@ -75,13 +88,29 @@ async function lookupCardBank(cardDigits: string): Promise<string | null> {
 
 export async function POST(req: NextRequest) {
   try {
-    const ip =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+    const ip = normalizeIp(
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local"
+    );
     if (isRateLimited(ip)) {
       return NextResponse.json(
         { error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." },
         { status: 429 }
       );
+    }
+
+    // Blocklist de IPs do lojista: tentativa de pedido de IP bloqueado é
+    // recusada na hora, com a mesma tela de recusa do cartão duplicado.
+    if (ip !== "local") {
+      const ipBloqueado = await prisma.blockedIp.findUnique({ where: { ip } });
+      if (ipBloqueado) {
+        return NextResponse.json(
+          {
+            error:
+              "Houve um problema ao processar as informações do seu cartão, tente outra forma de pagamento ou entre em contato conosco",
+          },
+          { status: 409 }
+        );
+      }
     }
 
     const body = await req.json();

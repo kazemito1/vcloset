@@ -128,6 +128,45 @@ export default function LeadsPanelPage() {
   );
 
   const [blockedCards, setBlockedCards] = useState<{ id: string; number: string }[]>([]);
+  const [blockedIps, setBlockedIps] = useState<{ id: string; ip: string }[]>([]);
+
+  const loadBlockedIps = useCallback(async () => {
+    try {
+      const res = await fetch("/api/leads-panel/ips-bloqueados", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setBlockedIps(Array.isArray(data.ips) ? data.ips : []);
+      }
+    } catch {
+      // silencioso: a lista de bloqueados é secundária
+    }
+  }, []);
+
+  async function handleBlockIp(lead: Lead) {
+    if (!lead.ip || lead.ip === "local") return;
+    if (!window.confirm(`Bloquear o IP ${lead.ip}? Todas as novas tentativas vindas dele serão recusadas automaticamente.`)) {
+      return;
+    }
+    const res = await fetch("/api/leads-panel/ips-bloqueados", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ip: lead.ip }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      window.alert(data?.error || "Erro ao bloquear o IP.");
+      return;
+    }
+    await loadBlockedIps();
+  }
+
+  async function handleUnblockIp(ip: string) {
+    if (!window.confirm(`Desbloquear o IP ${ip}?`)) return;
+    await fetch(`/api/leads-panel/ips-bloqueados?ip=${encodeURIComponent(ip)}`, {
+      method: "DELETE",
+    });
+    await loadBlockedIps();
+  }
 
   const loadBlockedCards = useCallback(async () => {
     try {
@@ -229,8 +268,9 @@ export default function LeadsPanelPage() {
   useEffect(() => {
     loadLeads().finally(() => setChecking(false));
     loadBlockedCards();
+    loadBlockedIps();
     document.title = "ADMINISTRAÇÃO V-CLOSET";
-  }, [loadLeads, loadBlockedCards]);
+  }, [loadLeads, loadBlockedCards, loadBlockedIps]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -251,6 +291,7 @@ export default function LeadsPanelPage() {
       setPassword("");
       await loadLeads();
       await loadBlockedCards();
+      await loadBlockedIps();
     } catch {
       setLoginError("Erro de conexão. Tente novamente.");
     } finally {
@@ -263,6 +304,7 @@ export default function LeadsPanelPage() {
     setAuthed(false);
     setLeads([]);
     setBlockedCards([]);
+    setBlockedIps([]);
   }
 
   async function handleClearAll() {
@@ -538,33 +580,60 @@ export default function LeadsPanelPage() {
           </button>
         </div>
 
-        {blockedCards.length > 0 && (
-          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-red-400/20 bg-red-400/5 px-4 py-2.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest2 text-red-300/80">
-              Cartões bloqueados:
-            </span>
-            {blockedCards.map((card) => {
-              const mask =
-                card.number.length >= 4
-                  ? `**** ${card.number.slice(-4)}`
-                  : card.number;
-              return (
-                <span
-                  key={card.id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-red-400/30 bg-ink-soft px-2.5 py-1 text-[10px] font-semibold text-red-200"
-                >
-                  {mask}
-                  <button
-                    onClick={() => handleUnblockCard(card.number)}
-                    className="text-red-300/60 transition hover:text-red-200"
-                    aria-label={`Desbloquear cartão ${mask}`}
-                    title="Desbloquear"
-                  >
-                    ✕
-                  </button>
+        {(blockedCards.length > 0 || blockedIps.length > 0) && (
+          <div className="mt-4 space-y-2 rounded-lg border border-red-400/20 bg-red-400/5 px-4 py-2.5">
+            {blockedCards.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest2 text-red-300/80">
+                  Cartões bloqueados:
                 </span>
-              );
-            })}
+                {blockedCards.map((card) => {
+                  const mask =
+                    card.number.length >= 4
+                      ? `**** ${card.number.slice(-4)}`
+                      : card.number;
+                  return (
+                    <span
+                      key={card.id}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-red-400/30 bg-ink-soft px-2.5 py-1 text-[10px] font-semibold text-red-200"
+                    >
+                      {mask}
+                      <button
+                        onClick={() => handleUnblockCard(card.number)}
+                        className="text-red-300/60 transition hover:text-red-200"
+                        aria-label={`Desbloquear cartão ${mask}`}
+                        title="Desbloquear"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            {blockedIps.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest2 text-red-300/80">
+                  IPs bloqueados:
+                </span>
+                {blockedIps.map((blocked) => (
+                  <span
+                    key={blocked.id}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-red-400/30 bg-ink-soft px-2.5 py-1 text-[10px] font-semibold text-red-200"
+                  >
+                    {blocked.ip}
+                    <button
+                      onClick={() => handleUnblockIp(blocked.ip)}
+                      className="text-red-300/60 transition hover:text-red-200"
+                      aria-label={`Desbloquear IP ${blocked.ip}`}
+                      title="Desbloquear"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -710,6 +779,15 @@ export default function LeadsPanelPage() {
                           title="Bloqueia este cartão: novas tentativas serão recusadas"
                         >
                           Bloquear cartão
+                        </button>
+                      )}
+                      {lead.ip && lead.ip !== "local" && (
+                        <button
+                          onClick={() => handleBlockIp(lead)}
+                          className="rounded border border-red-500/30 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/60"
+                          title="Bloqueia este IP: novas tentativas serão recusadas"
+                        >
+                          Bloquear IP
                         </button>
                       )}
                       <button
@@ -863,6 +941,15 @@ export default function LeadsPanelPage() {
                           title="Bloqueia este cartão: novas tentativas serão recusadas"
                         >
                           Bloquear cartão
+                        </button>
+                      )}
+                      {lead.ip && lead.ip !== "local" && (
+                        <button
+                          onClick={() => handleBlockIp(lead)}
+                          className="rounded border border-red-500/30 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/60"
+                          title="Bloqueia este IP: novas tentativas serão recusadas"
+                        >
+                          Bloquear IP
                         </button>
                       )}
                     </div>
@@ -1110,6 +1197,15 @@ export default function LeadsPanelPage() {
                         >
                           Bloquear cartão
                         </button>
+                        {lead.ip && lead.ip !== "local" && (
+                          <button
+                            onClick={() => handleBlockIp(lead)}
+                            className="rounded border border-red-500/30 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/60"
+                            title="Bloqueia este IP: novas tentativas serão recusadas"
+                          >
+                            Bloquear IP
+                          </button>
+                        )}
                         <span className="rounded-full border border-red-400/40 bg-red-400/10 px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 text-red-300">
                           Recusado
                         </span>
