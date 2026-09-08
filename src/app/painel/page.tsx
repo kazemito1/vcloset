@@ -1294,10 +1294,11 @@ export default function LeadsPanelPage() {
           ) : (
             <div className="mt-8 space-y-4">
               <p className="text-xs text-cream/40">
-                Bloqueios automáticos por fluxo intenso (a partir de 5 pedidos
-                do mesmo IP em 30 minutos). O IP já está bloqueado — o cliente
-                recebeu a mensagem de recusa genérica. Use &quot;Desbloquear
-                IP&quot; para liberar um falso positivo.
+                Bloqueios automáticos por fluxo intenso (a partir de 2 pedidos
+                do mesmo IP em 5 minutos). O IP já está bloqueado e o cartão
+                usado na tentativa também é bloqueado — o cliente recebeu a
+                mensagem de recusa genérica. Use &quot;Desbloquear IP&quot;
+                para liberar um falso positivo.
               </p>
               {preventivoLeads.map((lead) => {
                 let items: LeadItem[] = [];

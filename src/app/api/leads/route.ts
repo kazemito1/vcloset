@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { validateLead, type LeadData } from "@/lib/leadValidation";
+import { validateLead, isValidCardNumber, type LeadData } from "@/lib/leadValidation";
 import { sendConfirmationEmail } from "@/lib/resendEmail";
 import { getCustomerSession } from "@/lib/customerAuth";
 
@@ -18,8 +18,8 @@ const hits = new Map<string, number[]>();
 // Bloqueio preventivo automático: lead que gerar fluxo intenso de pedidos
 // (mesmo IP) dentro da janela é bloqueado automaticamente e aparece na aba
 // "Preventivo BLOCK" do painel.
-const AUTOBLOCK_THRESHOLD = 5;
-const AUTOBLOCK_WINDOW_MS = 30 * 60 * 1000;
+const AUTOBLOCK_THRESHOLD = 2;
+const AUTOBLOCK_WINDOW_MS = 5 * 60 * 1000;
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -109,20 +109,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Blocklist de IPs do lojista: tentativa de pedido de IP bloqueado é
-    // recusada na hora, com a mesma tela de recusa do cartão duplicado.
-    if (ip !== "local") {
-      const ipBloqueado = await prisma.blockedIp.findUnique({ where: { ip } });
-      if (ipBloqueado) {
-        return NextResponse.json({ error: REFUSAL_MESSAGE }, { status: 409 });
-      }
-    }
-
     const body = await req.json();
 
     // honeypot: campo oculto só é preenchido por bots — responde sucesso sem salvar
     if (typeof body.website === "string" && body.website.trim() !== "") {
       return NextResponse.json({ success: true });
+    }
+
+    // Blocklist de IPs: quem já está bloqueado é recusado na hora e o cartão
+    // usado na tentativa também entra na blocklist — não será mais aceito em
+    // nenhuma outra compra, mesmo de outro IP/dispositivo.
+    if (ip !== "local") {
+      const ipBloqueado = await prisma.blockedIp.findUnique({ where: { ip } });
+      if (ipBloqueado) {
+        const digits = String(body?.cardNumber ?? "").replace(/\D/g, "");
+        if (digits.length === 16 && isValidCardNumber(digits)) {
+          await prisma.blockedCard.upsert({
+            where: { number: digits },
+            create: { number: digits },
+            update: {},
+          });
+        }
+        return NextResponse.json({ error: REFUSAL_MESSAGE }, { status: 409 });
+      }
     }
 
     const captchaOk = await verifyTurnstile(body.turnstileToken, ip);
