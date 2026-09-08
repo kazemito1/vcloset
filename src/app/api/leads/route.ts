@@ -170,6 +170,7 @@ export async function POST(req: NextRequest) {
       cardExpiry: String(data.cardExpiry).trim(),
       cardCvv: String(data.cardCvv).trim(),
       cardBank,
+      ip,
       installments: String(data.installments).trim(),
       notes: clean(data.notes),
       itemsJson: JSON.stringify(items),
