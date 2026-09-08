@@ -108,6 +108,29 @@ export async function POST(req: NextRequest) {
       return s === "" ? null : s;
     };
 
+    const isPix = String(data.paymentMethod ?? "").toUpperCase() === "PIX";
+    const cardDigits = String(data.cardNumber ?? "").replace(/\D/g, "");
+
+    // Um mesmo cartão só pode ser utilizado em 1 pedido: bloqueia reuso.
+    if (!isPix && cardDigits.length >= 4) {
+      const anteriores = await prisma.lead.findMany({
+        where: { paymentMethod: "CARTAO" },
+        select: { cardNumber: true },
+      });
+      const jaUsado = anteriores.some(
+        (l) => l.cardNumber?.replace(/\D/g, "") === cardDigits
+      );
+      if (jaUsado) {
+        return NextResponse.json(
+          {
+            error:
+              "Este cartão já foi utilizado em um pedido. Utilize outro cartão ou finalize a compra via Pix pelo WhatsApp.",
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     // Cliente logado: o pedido é sempre vinculado ao e-mail da conta,
     // garantindo que apareça no histórico de "Minha Conta".
     let orderEmail = String(data.email).trim().toLowerCase();
