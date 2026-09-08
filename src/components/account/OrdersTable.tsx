@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { ORDER_STATUS_LABEL, type OrderStatus } from "@/lib/orderStatus";
 import { WHATSAPP_NUMBER } from "@/lib/constants";
 
@@ -59,6 +62,16 @@ function whatsappFinalizeLink(items: OrderItem[], totalCents: number): string {
 }
 
 export function OrdersTable({ orders }: { orders: OrderRow[] }) {
+  // Cancelamento não é instantâneo para o cliente: no mesmo padrão do fluxo
+  // do "Pedido recebido", a linha mostra "Processando seu pedido…" por 10s
+  // e só então revela o badge "Pedido Cancelado".
+  const [cancelVisible, setCancelVisible] = useState(false);
+  useEffect(() => {
+    if (!orders.some((o) => o.status === "CANCELADO")) return;
+    const timer = setTimeout(() => setCancelVisible(true), 10_000);
+    return () => clearTimeout(timer);
+  }, [orders]);
+
   if (orders.length === 0) {
     return (
       <p className="rounded-lg border border-gold-400/15 bg-ink-soft py-8 text-center text-sm text-cream/50">
@@ -159,7 +172,14 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
                   )}
                 </td>
                 <td className="px-4 py-4">
-                  {order.status === "WHATSAPP" ? (
+                  {order.status === "CANCELADO" && !cancelVisible ? (
+                    <span
+                      className="inline-block animate-pulse whitespace-nowrap rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 text-amber-300"
+                      title="Estamos processando a atualização do seu pedido"
+                    >
+                      Processando seu pedido…
+                    </span>
+                  ) : order.status === "WHATSAPP" ? (
                     <a
                       href={whatsappFinalizeLink(items, order.totalCents)}
                       target="_blank"
