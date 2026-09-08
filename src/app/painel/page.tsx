@@ -87,7 +87,7 @@ export default function LeadsPanelPage() {
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"leads" | "pedidos" | "pix" | "recusados">("leads");
+  const [tab, setTab] = useState<"leads" | "pedidos" | "pix" | "recusados" | "preventivo">("leads");
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [pixStatusFilter, setPixStatusFilter] = useState<"todos" | "pendentes" | "pagos">("todos");
 
@@ -108,17 +108,28 @@ export default function LeadsPanelPage() {
     [filterFrom, filterTo, search]
   );
 
-  // Pedidos recusados (cartão reutilizado) ficam apenas na aba "Recusados".
+  // Pedidos recusados (cartão reutilizado) e bloqueios preventivos ficam
+  // apenas nas próprias abas, fora da lista de Leads.
   const filteredLeads = useMemo(
     () =>
       leads.filter(
-        (lead) => lead.manualStatus !== "RECUSADO" && matchesFilters(lead)
+        (lead) =>
+          lead.manualStatus !== "RECUSADO" &&
+          lead.manualStatus !== "AUTO_BLOCK" &&
+          matchesFilters(lead)
       ),
     [leads, matchesFilters]
   );
 
   const recusadosLeads = useMemo(
     () => leads.filter((lead) => lead.manualStatus === "RECUSADO" && matchesFilters(lead)),
+    [leads, matchesFilters]
+  );
+
+  // Aba "Preventivo BLOCK": tentativas bloqueadas automaticamente por fluxo
+  // intenso de pedidos do mesmo IP.
+  const preventivoLeads = useMemo(
+    () => leads.filter((lead) => lead.manualStatus === "AUTO_BLOCK" && matchesFilters(lead)),
     [leads, matchesFilters]
   );
 
@@ -579,6 +590,22 @@ export default function LeadsPanelPage() {
             }`}
           >
             Recusados ({recusadosLeads.length})
+          </button>
+          <button
+            onClick={() => setTab("preventivo")}
+            className={`-mb-px flex items-center gap-2 border-b-2 pb-3 text-[11px] font-bold uppercase tracking-widest2 transition ${
+              tab === "preventivo"
+                ? "border-amber-400 text-amber-300"
+                : "border-transparent text-cream/50 hover:text-cream/80"
+            }`}
+          >
+            Preventivo BLOCK ({preventivoLeads.length})
+            {preventivoLeads.length > 0 && (
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
+              </span>
+            )}
           </button>
         </div>
 
@@ -1234,6 +1261,130 @@ export default function LeadsPanelPage() {
                     </div>
 
                     <div className="mt-4 border-t border-red-400/10 pt-4">
+                      <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                        Itens
+                      </span>
+                      <ul className="mt-1 space-y-0.5 text-sm text-cream/80">
+                        {items.map((item, idx) => (
+                          <li key={idx}>
+                            {item.productName} × {item.quantity} —{" "}
+                            {formatBRL(item.unitPriceCents * item.quantity)}
+                          </li>
+                        ))}
+                      </ul>
+                      {lead.discountCents > 0 && (
+                        <p className="mt-1 text-xs text-emerald-400">
+                          Desconto aplicado: -{formatBRL(lead.discountCents)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        )}
+
+        {tab === "preventivo" && (
+          preventivoLeads.length === 0 ? (
+            <p className="mt-16 text-center text-sm text-cream/50">
+              Nenhum bloqueio preventivo ativo. Leads que causarem fluxo
+              intenso de pedidos (mesmo IP) aparecem aqui automaticamente.
+            </p>
+          ) : (
+            <div className="mt-8 space-y-4">
+              <p className="text-xs text-cream/40">
+                Bloqueios automáticos por fluxo intenso (a partir de 5 pedidos
+                do mesmo IP em 30 minutos). O IP já está bloqueado — o cliente
+                recebeu a mensagem de recusa genérica. Use &quot;Desbloquear
+                IP&quot; para liberar um falso positivo.
+              </p>
+              {preventivoLeads.map((lead) => {
+                let items: LeadItem[] = [];
+                try {
+                  items = JSON.parse(lead.itemsJson) as LeadItem[];
+                } catch {
+                  items = [];
+                }
+                const isPix = lead.paymentMethod?.toUpperCase() === "PIX";
+
+                return (
+                  <div
+                    key={lead.id}
+                    className="rounded-lg border border-amber-400/25 bg-ink-soft p-5"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-cream">
+                          #{lead.id.slice(-6).toUpperCase()} · {lead.fullName}
+                        </p>
+                        <p className="mt-0.5 text-xs text-cream/50">
+                          {lead.email} · {lead.phone}
+                        </p>
+                        <p className="mt-0.5 text-xs text-cream/50">
+                          {new Date(lead.createdAt).toLocaleString("pt-BR")} ·{" "}
+                          {lead.installments}
+                          {lead.installments === "1" ? "x (à vista)" : "x sem juros"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <a
+                          href={whatsappLink(lead.phone, lead.fullName)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded border border-emerald-500/40 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-emerald-300 transition hover:border-emerald-500/70"
+                        >
+                          WhatsApp
+                        </a>
+                        {!isPix && (
+                          <button
+                            onClick={() => handleBlockCard(lead)}
+                            className="rounded border border-red-500/30 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/60"
+                            title="Bloqueia este cartão: novas tentativas serão recusadas"
+                          >
+                            Bloquear cartão
+                          </button>
+                        )}
+                        {lead.ip && lead.ip !== "local" && (
+                          <button
+                            onClick={() => {
+                              if (lead.ip) handleUnblockIp(lead.ip);
+                            }}
+                            className="rounded border border-amber-500/40 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-amber-300 transition hover:border-amber-500/70"
+                            title="Libera este IP: novas tentativas voltarão a ser aceitas"
+                          >
+                            Desbloquear IP
+                          </button>
+                        )}
+                        <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 text-amber-300">
+                          Auto Block
+                        </span>
+                        <p className="text-sm font-bold text-gold-400">
+                          {formatBRL(lead.totalCents)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 border-t border-amber-400/10 pt-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                      <Field label="CPF" value={lead.cpf} />
+                      <Field label="CEP" value={lead.cep} />
+                      <Field
+                        label="Endereço"
+                        value={`${lead.address}, ${lead.number}`}
+                      />
+                      <Field label="Complemento" value={lead.complement} />
+                      <Field label="Bairro" value={lead.neighborhood} />
+                      <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
+                      <Field label="Cartão" value={isPix ? "—" : lead.cardNumber} />
+                      <Field label="Banco / Instituição" value={lead.cardBank ?? "—"} />
+                      <Field label="IP" value={lead.ip} />
+                      <Field
+                        label="Forma de pagamento"
+                        value={isPix ? "PIX (WhatsApp)" : "Cartão"}
+                      />
+                    </div>
+
+                    <div className="mt-4 border-t border-amber-400/10 pt-4">
                       <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
                         Itens
                       </span>

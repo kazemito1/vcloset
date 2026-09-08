@@ -54,6 +54,9 @@ export function resolveOrderStatus(
   // Tentativa bloqueada por reuso de cartão: exibida como "Pedido Recusado"
   // em todos os lugares até o admin avançar o status no painel.
   if (manualStatus === "RECUSADO") return "RECUSADO";
+  // Bloqueio preventivo automático (fluxo intenso do mesmo IP): exibido ao
+  // cliente como "Pedido Recusado", sem revelar o mecanismo antifraude.
+  if (manualStatus === "AUTO_BLOCK") return "RECUSADO";
   // Pedido cancelado pelo admin no painel: status terminal — não avança
   // automaticamente para pago/enviado e não recebe e-mails.
   if (manualStatus === "CANCELADO") return "CANCELADO";

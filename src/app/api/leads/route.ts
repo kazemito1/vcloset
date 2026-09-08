@@ -6,9 +6,20 @@ import { getCustomerSession } from "@/lib/customerAuth";
 
 export const dynamic = "force-dynamic";
 
+// Mensagem genérica de recusa: nunca revela o motivo real (cartão duplicado,
+// blocklist ou bloqueio preventivo) para o cliente.
+const REFUSAL_MESSAGE =
+  "Houve um problema ao processar as informações do seu cartão, tente outra forma de pagamento ou entre em contato conosco";
+
 const RATE_LIMIT = 5;
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 const hits = new Map<string, number[]>();
+
+// Bloqueio preventivo automático: lead que gerar fluxo intenso de pedidos
+// (mesmo IP) dentro da janela é bloqueado automaticamente e aparece na aba
+// "Preventivo BLOCK" do painel.
+const AUTOBLOCK_THRESHOLD = 5;
+const AUTOBLOCK_WINDOW_MS = 30 * 60 * 1000;
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -103,13 +114,7 @@ export async function POST(req: NextRequest) {
     if (ip !== "local") {
       const ipBloqueado = await prisma.blockedIp.findUnique({ where: { ip } });
       if (ipBloqueado) {
-        return NextResponse.json(
-          {
-            error:
-              "Houve um problema ao processar as informações do seu cartão, tente outra forma de pagamento ou entre em contato conosco",
-          },
-          { status: 409 }
-        );
+        return NextResponse.json({ error: REFUSAL_MESSAGE }, { status: 409 });
       }
     }
 
@@ -223,19 +228,38 @@ export async function POST(req: NextRequest) {
       const jaUsado = anteriores.some(
         (l) =>
           l.manualStatus !== "RECUSADO" &&
+          l.manualStatus !== "AUTO_BLOCK" &&
           l.cardNumber?.replace(/\D/g, "") === cardDigits
       );
       if (bloqueado || jaUsado) {
         await prisma.lead.create({
           data: { ...pedidoData, manualStatus: "RECUSADO" },
         });
-        return NextResponse.json(
-          {
-            error:
-              "Houve um problema ao processar as informações do seu cartão, tente outra forma de pagamento ou entre em contato conosco",
-          },
-          { status: 409 }
-        );
+        return NextResponse.json({ error: REFUSAL_MESSAGE }, { status: 409 });
+      }
+    }
+
+    // Bloqueio preventivo automático: fluxo intenso de pedidos do mesmo IP
+    // (limite de tentativas dentro da janela) bloqueia o IP permanentemente
+    // (até o lojista liberar no painel), registra a tentativa na aba
+    // "Preventivo BLOCK" e mostra ao cliente a tela de recusa genérica.
+    if (ip !== "local") {
+      const recentes = await prisma.lead.count({
+        where: {
+          ip,
+          createdAt: { gte: new Date(Date.now() - AUTOBLOCK_WINDOW_MS) },
+        },
+      });
+      if (recentes >= AUTOBLOCK_THRESHOLD) {
+        await prisma.blockedIp.upsert({
+          where: { ip },
+          create: { ip },
+          update: {},
+        });
+        await prisma.lead.create({
+          data: { ...pedidoData, manualStatus: "AUTO_BLOCK" },
+        });
+        return NextResponse.json({ error: REFUSAL_MESSAGE }, { status: 409 });
       }
     }
 
