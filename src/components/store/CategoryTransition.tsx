@@ -99,21 +99,21 @@ export function CategoryTransitionProvider({ children }: { children: React.React
       {active && (
         <div
           aria-hidden="true"
-          className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-night transition-opacity ${
+          className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-cream pb-[14vh] transition-opacity ${
             leaving ? "opacity-0" : "opacity-100"
           }`}
           style={{ transitionDuration: `${FADE_MS}ms` }}
         >
-          <p className="font-serif text-3xl tracking-[0.35em] text-gold-400 md:text-4xl">
+          <p className="font-serif text-4xl font-semibold tracking-[0.35em] text-ink drop-shadow-sm md:text-5xl">
             V.CLOSET
           </p>
-          <p className="mt-4 text-[10px] uppercase tracking-widest2 text-cream/50">
+          <p className="mt-5 text-xs font-semibold uppercase tracking-widest2 text-ink/70">
             Preparando sua experiência
           </p>
-          <div className="mt-8 h-px w-56 overflow-hidden bg-gold-400/20">
+          <div className="mt-10 h-[3px] w-64 overflow-hidden rounded-full bg-gold-500/25">
             <div
               key={runId}
-              className="h-full bg-gold-400"
+              className="h-full bg-gold-500"
               style={{ animation: `vcload ${TRANSITION_MS}ms linear forwards` }}
             />
           </div>
