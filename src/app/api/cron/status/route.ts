@@ -16,11 +16,14 @@ export async function GET(req: NextRequest) {
   }
 
   // Só interessam leads que ainda não completaram o ciclo de e-mails
-  // (falta pelo menos o de envio). Recusados ficam sempre de fora — nunca
-  // recebem e-mail. Uma vez enviados os dois e-mails, o lead nunca mais
-  // precisa ser revisitado por este job.
+  // (falta pelo menos o de envio). Recusados e cancelados ficam sempre de
+  // fora — nunca recebem e-mail. Uma vez enviados os dois e-mails, o lead
+  // nunca mais precisa ser revisitado por este job.
   const leads = await prisma.lead.findMany({
-    where: { shippingEmailSentAt: null, manualStatus: { not: "RECUSADO" } },
+    where: {
+      shippingEmailSentAt: null,
+      manualStatus: { notIn: ["RECUSADO", "CANCELADO"] },
+    },
     orderBy: { createdAt: "asc" },
     take: 500,
   });

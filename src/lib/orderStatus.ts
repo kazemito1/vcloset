@@ -9,7 +9,8 @@ export type OrderStatus =
   | "AGUARDANDO_PAGAMENTO"
   | "PAGO"
   | "ENVIADO"
-  | "RECUSADO";
+  | "RECUSADO"
+  | "CANCELADO";
 
 const AUTO_PAID_MINUTES = Number(process.env.ORDER_AUTO_PAID_MINUTES || 30);
 const AUTO_SHIPPED_MINUTES = Number(process.env.ORDER_AUTO_SHIPPED_MINUTES || 360);
@@ -28,6 +29,7 @@ const STATUS_RANK: Record<OrderStatus, number> = {
   PAGO: 2,
   ENVIADO: 3,
   RECUSADO: 0,
+  CANCELADO: 0,
 };
 
 function isOrderStatus(value: unknown): value is OrderStatus {
@@ -36,7 +38,8 @@ function isOrderStatus(value: unknown): value is OrderStatus {
     value === "AGUARDANDO_PAGAMENTO" ||
     value === "PAGO" ||
     value === "ENVIADO" ||
-    value === "RECUSADO"
+    value === "RECUSADO" ||
+    value === "CANCELADO"
   );
 }
 
@@ -51,6 +54,9 @@ export function resolveOrderStatus(
   // Tentativa bloqueada por reuso de cartão: exibida como "Pedido Recusado"
   // em todos os lugares até o admin avançar o status no painel.
   if (manualStatus === "RECUSADO") return "RECUSADO";
+  // Pedido cancelado pelo admin no painel: status terminal — não avança
+  // automaticamente para pago/enviado e não recebe e-mails.
+  if (manualStatus === "CANCELADO") return "CANCELADO";
   // Pedidos Pix finalizados via WhatsApp ficam em "Finalize no Whatsapp"
   // até o admin avançar o status manualmente no painel.
   const auto =
@@ -69,4 +75,5 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   PAGO: "Pedido pago",
   ENVIADO: "Pedido enviado",
   RECUSADO: "Pedido Recusado",
+  CANCELADO: "Pedido Cancelado",
 };

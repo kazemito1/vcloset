@@ -65,12 +65,14 @@ const STATUS_BADGE: Record<OrderStatus, string> = {
   PAGO: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300",
   ENVIADO: "border-sky-400/40 bg-sky-400/10 text-sky-300",
   RECUSADO: "border-red-400/40 bg-red-400/10 text-red-300",
+  CANCELADO: "border-zinc-400/40 bg-zinc-400/10 text-zinc-300",
 };
 
 const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: "AGUARDANDO_PAGAMENTO", label: "Aguardando pagamento" },
   { value: "PAGO", label: "Pago" },
   { value: "ENVIADO", label: "Enviado" },
+  { value: "CANCELADO", label: "Cancelado" },
 ];
 
 export default function LeadsPanelPage() {

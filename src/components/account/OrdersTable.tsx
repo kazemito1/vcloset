@@ -41,6 +41,8 @@ function statusBadgeClass(status: OrderStatus): string {
       return "border-[#25D366]/50 bg-[#25D366]/10 text-[#4ae08a]";
     case "RECUSADO":
       return "border-red-400/50 bg-red-400/10 text-red-300";
+    case "CANCELADO":
+      return "border-zinc-400/50 bg-zinc-400/10 text-zinc-300";
     default:
       return "border-amber-400/40 bg-amber-400/10 text-amber-300";
   }

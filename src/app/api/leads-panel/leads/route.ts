@@ -47,7 +47,7 @@ export async function DELETE(req: NextRequest) {
   return NextResponse.json({ error: "Parâmetro inválido." }, { status: 400 });
 }
 
-const VALID_MANUAL_STATUS = ["AGUARDANDO_PAGAMENTO", "PAGO", "ENVIADO"] as const;
+const VALID_MANUAL_STATUS = ["AGUARDANDO_PAGAMENTO", "PAGO", "ENVIADO", "CANCELADO"] as const;
 
 export async function PATCH(req: NextRequest) {
   const session = await getPanelSession(req);
