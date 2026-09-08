@@ -322,6 +322,7 @@ export default function LeadsPanelPage() {
       "Bairro",
       "Cidade",
       "UF",
+      "IP",
       // Dados de pagamento
       "Forma de Pagamento",
       "Parcelas",
@@ -353,6 +354,7 @@ export default function LeadsPanelPage() {
         lead.neighborhood,
         lead.city,
         lead.state,
+        lead.ip ?? "-",
         // Dados de pagamento
         isPix ? "PIX (WhatsApp)" : "Cartão",
         isPix ? "-" : lead.installments,
