@@ -13,11 +13,10 @@ export function VisitTracker() {
     if (lastPath === pathname) return;
 
     const first = lastPath === null;
-    const isCheckout = pathname.startsWith("/checkout");
 
-    // Telegram: notificar SOMENTE novo acesso (lead novo) ou abertura do
-    // checkout. Navegação interna comum não é enviada.
-    if (!first && !isCheckout) {
+    // Telegram: enviar ping apenas no primeiro carregamento da sessão.
+    // O servidor deduplica por IP — só um lead verdadeiramente novo notifica.
+    if (!first) {
       sessionStorage.setItem(visitedKey, pathname);
       return;
     }

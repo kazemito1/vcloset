@@ -117,28 +117,22 @@ function parseUserAgent(ua: string) {
 }
 
 export async function notifyNewVisit(info: {
+  ip: string;
   path: string;
   referer: string;
   userAgent: string;
   lang: string;
   timezone: string;
   screen: string;
-  first: boolean;
 }): Promise<void> {
-  const isCheckout = info.path.startsWith("/checkout");
-
-  // Notificar APENAS: primeiro acesso do lead ou abertura do checkout.
-  // Navegação interna comum ("Navegação no site") não é mais enviada.
-  if (!info.first && !isCheckout) return;
-
   const { device, browser, os } = parseUserAgent(info.userAgent);
 
+  // Disparada apenas para leads novos (dedup por IP feita na rota).
   const lines = [
-    isCheckout
-      ? "🛒 <b>Lead abriu o checkout</b>"
-      : "👀 <b>Novo acesso ao site</b>",
+    "👀 <b>Novo lead no site</b>",
     "",
     `<b>Horário:</b> ${formatVisitTime()}`,
+    `<b>IP:</b> ${escapeHtml(info.ip)}`,
     `<b>Página:</b> ${escapeHtml(info.path || "/")}`,
     `<b>Origem:</b> ${escapeHtml(info.referer || "direta")}`,
     `<b>Dispositivo:</b> ${escapeHtml(device)}`,

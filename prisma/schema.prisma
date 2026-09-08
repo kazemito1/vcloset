@@ -276,3 +276,11 @@ model Customer {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+// IPs que já dispararam notificação de "novo lead" no Telegram.
+// Garante que o mesmo visitante (mesmo IP) notifique apenas uma vez.
+model NotifiedVisit {
+  id        String   @id @default(cuid())
+  ip        String   @unique
+  createdAt DateTime @default(now())
+}
