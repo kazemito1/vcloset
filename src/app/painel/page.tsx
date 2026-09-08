@@ -63,6 +63,7 @@ const STATUS_BADGE: Record<OrderStatus, string> = {
   AGUARDANDO_PAGAMENTO: "border-amber-400/40 bg-amber-400/10 text-amber-300",
   PAGO: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300",
   ENVIADO: "border-sky-400/40 bg-sky-400/10 text-sky-300",
+  RECUSADO: "border-red-400/40 bg-red-400/10 text-red-300",
 };
 
 const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
@@ -123,6 +124,13 @@ export default function LeadsPanelPage() {
 
   const recusadosLeads = useMemo(
     () => leads.filter((lead) => lead.manualStatus === "RECUSADO" && matchesFilters(lead)),
+    [leads, matchesFilters]
+  );
+
+  // Aba "Pedidos": todos os pedidos (inclusive recusados, exibidos como
+  // "Pedido Recusado").
+  const pedidosLeads = useMemo(
+    () => leads.filter(matchesFilters),
     [leads, matchesFilters]
   );
 
@@ -699,13 +707,13 @@ export default function LeadsPanelPage() {
             <p className="mt-16 text-center text-sm text-cream/50">
               Nenhum pedido recebido ainda.
             </p>
-          ) : filteredLeads.length === 0 ? (
+          ) : pedidosLeads.length === 0 ? (
             <p className="mt-16 text-center text-sm text-cream/50">
               Nenhum pedido encontrado para esse filtro.
             </p>
           ) : (
             <div className="mt-8 space-y-3">
-              {filteredLeads.map((lead) => {
+              {pedidosLeads.map((lead) => {
                 let items: LeadItem[] = [];
                 try {
                   items = JSON.parse(lead.itemsJson) as LeadItem[];
