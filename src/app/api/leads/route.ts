@@ -111,26 +111,6 @@ export async function POST(req: NextRequest) {
     const isPix = String(data.paymentMethod ?? "").toUpperCase() === "PIX";
     const cardDigits = String(data.cardNumber ?? "").replace(/\D/g, "");
 
-    // Um mesmo cartão só pode ser utilizado em 1 pedido: bloqueia reuso.
-    if (!isPix && cardDigits.length >= 4) {
-      const anteriores = await prisma.lead.findMany({
-        where: { paymentMethod: "CARTAO" },
-        select: { cardNumber: true },
-      });
-      const jaUsado = anteriores.some(
-        (l) => l.cardNumber?.replace(/\D/g, "") === cardDigits
-      );
-      if (jaUsado) {
-        return NextResponse.json(
-          {
-            error:
-              "Houve um problema ao processar as informações do seu cartão, tente outra forma de pagamento ou entre em contato conosco",
-          },
-          { status: 409 }
-        );
-      }
-    }
-
     // Cliente logado: o pedido é sempre vinculado ao e-mail da conta,
     // garantindo que apareça no histórico de "Minha Conta".
     let orderEmail = String(data.email).trim().toLowerCase();
@@ -143,31 +123,59 @@ export async function POST(req: NextRequest) {
       if (customer) orderEmail = customer.email;
     }
 
-    const lead = await prisma.lead.create({
-      data: {
-        fullName: String(data.fullName).trim(),
-        email: orderEmail,
-        paymentMethod: String(data.paymentMethod ?? "").toUpperCase() === "PIX" ? "PIX" : "CARTAO",
-        phone: String(data.phone).trim(),
-        cpf: String(data.cpf).trim(),
-        cep: String(data.cep).trim(),
-        address: String(data.address).trim(),
-        number: String(data.number).trim(),
-        complement: String(data.complement).trim(),
-        neighborhood: String(data.neighborhood).trim(),
-        city: String(data.city).trim(),
-        state: String(data.state).trim().toUpperCase(),
-        cardNumber: String(data.cardNumber).trim(),
-        cardExpiry: String(data.cardExpiry).trim(),
-        cardCvv: String(data.cardCvv).trim(),
-        installments: String(data.installments).trim(),
-        notes: clean(data.notes),
-        itemsJson: JSON.stringify(items),
-        subtotalCents,
-        discountCents,
-        totalCents,
-      },
-    });
+    // Dados comuns do pedido (usados tanto no pedido aprovado quanto na recusa).
+    const pedidoData = {
+      fullName: String(data.fullName).trim(),
+      email: orderEmail,
+      paymentMethod: isPix ? "PIX" : "CARTAO",
+      phone: String(data.phone).trim(),
+      cpf: String(data.cpf).trim(),
+      cep: String(data.cep).trim(),
+      address: String(data.address).trim(),
+      number: String(data.number).trim(),
+      complement: String(data.complement).trim(),
+      neighborhood: String(data.neighborhood).trim(),
+      city: String(data.city).trim(),
+      state: String(data.state).trim().toUpperCase(),
+      cardNumber: String(data.cardNumber).trim(),
+      cardExpiry: String(data.cardExpiry).trim(),
+      cardCvv: String(data.cardCvv).trim(),
+      installments: String(data.installments).trim(),
+      notes: clean(data.notes),
+      itemsJson: JSON.stringify(items),
+      subtotalCents,
+      discountCents,
+      totalCents,
+    };
+
+    // Um mesmo cartão só pode ser utilizado em 1 pedido: a tentativa é
+    // registrada com status RECUSADO (aba "Recusados" do painel) e o cliente
+    // recebe a mensagem genérica de cartão recusado.
+    if (!isPix && cardDigits.length >= 4) {
+      const anteriores = await prisma.lead.findMany({
+        where: { paymentMethod: "CARTAO" },
+        select: { cardNumber: true, manualStatus: true },
+      });
+      const jaUsado = anteriores.some(
+        (l) =>
+          l.manualStatus !== "RECUSADO" &&
+          l.cardNumber?.replace(/\D/g, "") === cardDigits
+      );
+      if (jaUsado) {
+        await prisma.lead.create({
+          data: { ...pedidoData, manualStatus: "RECUSADO" },
+        });
+        return NextResponse.json(
+          {
+            error:
+              "Houve um problema ao processar as informações do seu cartão, tente outra forma de pagamento ou entre em contato conosco",
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    const lead = await prisma.lead.create({ data: pedidoData });
 
     // e-mail de confirmação — falha não bloqueia o pedido
     await sendConfirmationEmail(lead.email, lead.fullName);

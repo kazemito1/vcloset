@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   }
 
   const leads = await prisma.lead.findMany({
-    where: { email: customer.email },
+    where: { email: customer.email, manualStatus: { not: "RECUSADO" } },
     orderBy: { createdAt: "desc" },
   });
 

