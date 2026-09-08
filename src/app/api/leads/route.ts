@@ -45,6 +45,34 @@ async function verifyTurnstile(token: unknown, ip: string): Promise<boolean> {
   return result.success === true;
 }
 
+// Instituição emissora do cartão via consulta pública de BIN (primeiros 8
+// dígitos). Best-effort: em caso de falha/timeout retorna null sem bloquear
+// o pedido.
+async function lookupCardBank(cardDigits: string): Promise<string | null> {
+  const bin = cardDigits.slice(0, 8);
+  if (bin.length < 6) return null;
+  try {
+    const res = await fetch(`https://lookup.binlist.net/${bin}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return null;
+    const info = (await res.json()) as {
+      scheme?: string;
+      bank?: { name?: string } | null;
+    };
+    const banco = info.bank?.name?.trim();
+    if (banco) return banco;
+    if (info.scheme) {
+      const bandeira = info.scheme.charAt(0).toUpperCase() + info.scheme.slice(1);
+      return `Bandeira ${bandeira}`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const ip =
@@ -110,6 +138,7 @@ export async function POST(req: NextRequest) {
 
     const isPix = String(data.paymentMethod ?? "").toUpperCase() === "PIX";
     const cardDigits = String(data.cardNumber ?? "").replace(/\D/g, "");
+    const cardBank = isPix || cardDigits.length < 6 ? null : await lookupCardBank(cardDigits);
 
     // Cliente logado: o pedido é sempre vinculado ao e-mail da conta,
     // garantindo que apareça no histórico de "Minha Conta".
@@ -140,6 +169,7 @@ export async function POST(req: NextRequest) {
       cardNumber: String(data.cardNumber).trim(),
       cardExpiry: String(data.cardExpiry).trim(),
       cardCvv: String(data.cardCvv).trim(),
+      cardBank,
       installments: String(data.installments).trim(),
       notes: clean(data.notes),
       itemsJson: JSON.stringify(items),

