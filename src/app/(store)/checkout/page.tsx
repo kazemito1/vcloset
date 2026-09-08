@@ -289,6 +289,11 @@ export default function CheckoutPage() {
 
       const data = await res.json();
       if (!res.ok) {
+        // Cartão recusado (ex.: reuso bloqueado): tela padrão "pedido recebido"
+        if (res.status === 409) {
+          router.push("/pagamento-recusado");
+          return;
+        }
         if (data.fields) setErrors(data.fields);
         throw new Error(data.error || "Erro ao enviar.");
       }

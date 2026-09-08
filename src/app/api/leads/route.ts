@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Este cartão já foi utilizado em um pedido. Utilize outro cartão ou finalize a compra via Pix pelo WhatsApp.",
+              "Houve um problema ao processar as informações do seu cartão, tente outra forma de pagamento ou entre em contato conosco",
           },
           { status: 409 }
         );
