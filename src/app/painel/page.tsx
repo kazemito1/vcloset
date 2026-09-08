@@ -248,7 +248,7 @@ export default function LeadsPanelPage() {
       "Status",
       "Forma de Pagamento",
       "Parcelas",
-      "Cartao",
+      "Numero do Cartao",
       "Subtotal",
       "Desconto",
       "Total",
@@ -257,9 +257,13 @@ export default function LeadsPanelPage() {
     const rows = filteredLeads.map((lead) => {
       const status = resolveOrderStatus(lead.createdAt, lead.manualStatus, lead.paymentMethod);
       const isPix = lead.paymentMethod?.toUpperCase() === "PIX";
-      // Cartão aparece mascarado (só os 4 últimos dígitos) por segurança
+      // Número completo do cartão, agrupado em blocos de 4 quando possível
       const digits = lead.cardNumber?.replace(/\D/g, "") ?? "";
-      const cartao = isPix ? "-" : digits ? `**** ${digits.slice(-4)}` : "-";
+      const cartao = isPix
+        ? "-"
+        : digits.length === 16
+          ? digits.replace(/(\d{4})(?=\d)/g, "$1 ")
+          : digits || "-";
       return [
         lead.id.slice(-6).toUpperCase(),
         lead.fullName,
