@@ -13,6 +13,15 @@ export function VisitTracker() {
     if (lastPath === pathname) return;
 
     const first = lastPath === null;
+    const isCheckout = pathname.startsWith("/checkout");
+
+    // Telegram: notificar SOMENTE novo acesso (lead novo) ou abertura do
+    // checkout. Navegação interna comum não é enviada.
+    if (!first && !isCheckout) {
+      sessionStorage.setItem(visitedKey, pathname);
+      return;
+    }
+
     sessionStorage.setItem(visitedKey, pathname);
 
     const payload = {

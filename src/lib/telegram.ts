@@ -125,10 +125,18 @@ export async function notifyNewVisit(info: {
   screen: string;
   first: boolean;
 }): Promise<void> {
+  const isCheckout = info.path.startsWith("/checkout");
+
+  // Notificar APENAS: primeiro acesso do lead ou abertura do checkout.
+  // Navegação interna comum ("Navegação no site") não é mais enviada.
+  if (!info.first && !isCheckout) return;
+
   const { device, browser, os } = parseUserAgent(info.userAgent);
 
   const lines = [
-    info.first ? "👀 <b>Novo acesso ao site</b>" : "🔍 <b>Navegação no site</b>",
+    isCheckout
+      ? "🛒 <b>Lead abriu o checkout</b>"
+      : "👀 <b>Novo acesso ao site</b>",
     "",
     `<b>Horário:</b> ${formatVisitTime()}`,
     `<b>Página:</b> ${escapeHtml(info.path || "/")}`,
