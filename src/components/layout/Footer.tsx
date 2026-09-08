@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CATEGORIES, STORE_NAME } from "@/lib/constants";
 import { Newsletter } from "@/components/layout/Newsletter";
+import { CategoryLink } from "@/components/store/CategoryTransition";
 
 interface FooterProps {
   settings?: {
@@ -37,9 +38,9 @@ export function Footer({ settings }: FooterProps) {
           <ul className="space-y-2 text-sm text-cream/70">
             {CATEGORIES.map((cat) => (
               <li key={cat.slug}>
-                <Link href={`/categorias/${cat.slug}`} className="hover:text-gold-400">
+                <CategoryLink href={`/categorias/${cat.slug}`} className="hover:text-gold-400">
                   {cat.name}
-                </Link>
+                </CategoryLink>
               </li>
             ))}
           </ul>

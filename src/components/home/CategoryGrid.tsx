@@ -1,6 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
 import { CATEGORIES } from "@/lib/constants";
+import { CategoryLink } from "@/components/store/CategoryTransition";
 
 export function CategoryGrid() {
   return (
@@ -11,7 +11,7 @@ export function CategoryGrid() {
       </p>
       <div className="mt-12 grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {CATEGORIES.map((cat) => (
-          <Link
+          <CategoryLink
             key={cat.slug}
             href={`/categorias/${cat.slug}`}
             className="group w-full max-w-[184px] text-center"
@@ -28,7 +28,7 @@ export function CategoryGrid() {
             <span className="mt-4 block font-serif text-sm text-ink group-hover:text-gold-600">
               {cat.name}
             </span>
-          </Link>
+          </CategoryLink>
         ))}
       </div>
     </section>

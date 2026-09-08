@@ -8,6 +8,7 @@ import { CATEGORIES, NAV_GROUPS, STORE_NAME } from "@/lib/constants";
 import { useCartStore } from "@/store/cartStore";
 import { formatBRL } from "@/lib/format";
 import { SearchModal } from "./SearchModal";
+import { CategoryLink } from "@/components/store/CategoryTransition";
 
 interface HeaderProps {
   settings?: { freeShippingCents: number };
@@ -162,7 +163,7 @@ export function Header({ settings }: HeaderProps) {
               const cat = categoryBySlug(group.slug);
               const href = group.href ?? `/categorias/${group.slug}`;
               return (
-                <Link
+                <CategoryLink
                   key={group.label}
                   href={href}
                   className={`text-sm uppercase tracking-wide transition-colors hover:text-gold-600 ${
@@ -170,7 +171,7 @@ export function Header({ settings }: HeaderProps) {
                   }`}
                 >
                   {cat?.name ?? group.label}
-                </Link>
+                </CategoryLink>
               );
             }
 
@@ -196,9 +197,10 @@ export function Header({ settings }: HeaderProps) {
                           const cat = categoryBySlug(slug);
                           if (!cat) return null;
                           return (
-                            <Link
+                            <CategoryLink
                               key={cat.slug}
                               href={`/categorias/${cat.slug}`}
+                              onClick={() => setOpenGroup(null)}
                               className="group flex items-center gap-3 rounded-sm p-2 transition-colors hover:bg-neutral-100"
                             >
                               <span className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-full bg-neutral-100">
@@ -207,7 +209,7 @@ export function Header({ settings }: HeaderProps) {
                               <span className="text-sm text-ink group-hover:text-gold-600">
                                 {cat.name}
                               </span>
-                            </Link>
+                            </CategoryLink>
                           );
                         })}
                       </div>
@@ -292,14 +294,14 @@ export function Header({ settings }: HeaderProps) {
               const cat = categoryBySlug(group.slug);
               const href = group.href ?? `/categorias/${group.slug}`;
               return (
-                <Link
+                <CategoryLink
                   key={group.label}
                   href={href}
                   onClick={() => setMenuOpen(false)}
                   className="py-2 text-sm uppercase tracking-wide text-ink"
                 >
                   {cat?.name ?? group.label}
-                </Link>
+                </CategoryLink>
               );
             }
 
@@ -328,14 +330,14 @@ export function Header({ settings }: HeaderProps) {
                       const cat = categoryBySlug(slug);
                       if (!cat) return null;
                       return (
-                        <Link
+                        <CategoryLink
                           key={cat.slug}
                           href={`/categorias/${cat.slug}`}
                           onClick={() => setMenuOpen(false)}
                           className="py-1.5 text-sm text-ink/70"
                         >
                           {cat.name}
-                        </Link>
+                        </CategoryLink>
                       );
                     })}
                   </div>

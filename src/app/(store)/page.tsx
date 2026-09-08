@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 import { parseProduct } from "@/lib/parseProduct";
 import { ProductCard } from "@/components/product/ProductCard";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
@@ -7,6 +6,7 @@ import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { TrustBadges } from "@/components/home/TrustBadges";
 import { STORE_NAME } from "@/lib/constants";
 import { getStoreSettings } from "@/lib/storeSettings";
+import { CategoryLink } from "@/components/store/CategoryTransition";
 
 export const revalidate = 0;
 
@@ -102,12 +102,12 @@ export default async function HomePage() {
                 Explore nossa coleção de {section.name.toLowerCase()}.
               </p>
             </div>
-            <Link
+            <CategoryLink
               href={`/categorias/${section.slug}`}
               className="hidden shrink-0 border-b border-gold-500 pb-1 text-xs uppercase tracking-wide text-gold-700 transition-colors hover:text-gold-500 sm:block"
             >
               Ver tudo
-            </Link>
+            </CategoryLink>
           </div>
           <div className="mt-12 grid grid-cols-2 gap-8 md:grid-cols-4">
             {section.products.map((p) => (

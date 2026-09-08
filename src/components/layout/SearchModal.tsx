@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { CATEGORIES } from "@/lib/constants";
 import { formatBRL } from "@/lib/format";
 import type { Product } from "@/types";
+import { CategoryLink } from "@/components/store/CategoryTransition";
 
 interface SearchModalProps {
   open: boolean;
@@ -109,7 +110,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
               <p className="mb-3 text-xs uppercase tracking-widest2 text-ink/50">Categorias populares</p>
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {CATEGORIES.slice(0, 4).map((cat) => (
-                  <Link
+                  <CategoryLink
                     key={cat.slug}
                     href={`/categorias/${cat.slug}`}
                     onClick={onClose}
@@ -119,7 +120,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
                       <Image src={cat.image} alt={cat.name} fill className="object-cover p-1.5" />
                     </span>
                     <span className="text-sm text-ink">{cat.name}</span>
-                  </Link>
+                  </CategoryLink>
                 ))}
               </div>
             </div>
@@ -143,14 +144,14 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
                   <p className="mb-2 text-xs uppercase tracking-widest2 text-ink/50">Categorias</p>
                   <div className="flex flex-wrap gap-2">
                     {categories.map((cat) => (
-                      <Link
+                      <CategoryLink
                         key={cat.id}
                         href={`/categorias/${cat.slug}`}
                         onClick={onClose}
                         className="rounded-sm border border-gold-400/30 px-3 py-1.5 text-sm text-ink transition-colors hover:border-gold-500 hover:text-gold-600"
                       >
                         {cat.name}
-                      </Link>
+                      </CategoryLink>
                     ))}
                   </div>
                 </div>

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { Subcategory } from "@/lib/productSubcategories";
+import { CategoryLink } from "@/components/store/CategoryTransition";
 
 interface Props {
   categorySlug: string;
@@ -21,17 +21,17 @@ export function SubcategoryNav({ categorySlug, activeSlug, subcategories }: Prop
 
   return (
     <nav className="mt-8 flex flex-wrap gap-2" aria-label="Subcategorias">
-      <Link href={`/categorias/${categorySlug}`} className={chipClass(!activeSlug)}>
+      <CategoryLink href={`/categorias/${categorySlug}`} className={chipClass(!activeSlug)}>
         Tudo
-      </Link>
+      </CategoryLink>
       {subcategories.map((sub) => (
-        <Link
+        <CategoryLink
           key={sub.slug}
           href={`/categorias/${categorySlug}/${sub.slug}`}
           className={chipClass(activeSlug === sub.slug)}
         >
           {sub.name}
-        </Link>
+        </CategoryLink>
       ))}
     </nav>
   );

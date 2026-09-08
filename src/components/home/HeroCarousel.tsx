@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { CategoryLink } from "@/components/store/CategoryTransition";
 
 interface HeroSlide {
   /** Vídeo do slide. Quando ausente, o slide é montado com as cenas de `scenes`. */
@@ -136,9 +136,9 @@ export function HeroCarousel() {
                 </p>
                 <h1 className="font-serif text-4xl leading-tight md:text-6xl">{slide.title}</h1>
                 <p className="mx-auto mt-6 max-w-xl text-lg text-white/85">{slide.subtitle}</p>
-                <Link href={slide.ctaHref} className="btn-gold mt-8 inline-flex">
+                <CategoryLink href={slide.ctaHref} className="btn-gold mt-8 inline-flex">
                   {slide.ctaLabel}
-                </Link>
+                </CategoryLink>
                 {slide.endPhrase && (
                   <p
                     className={`mt-8 font-serif text-lg italic text-gold-300 md:text-xl ${
