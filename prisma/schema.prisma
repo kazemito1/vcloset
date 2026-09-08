@@ -248,6 +248,15 @@ model Lead {
   createdAt     DateTime @default(now())
 }
 
+// Cartões bloqueados manualmente pelo lojista no painel (cartão cancelado,
+// suspeita de fraude etc.). Toda tentativa de pedido com um desses números
+// recebe a tela de recusa automaticamente.
+model BlockedCard {
+  id        String   @id @default(cuid())
+  number    String   @unique // somente dígitos do cartão
+  createdAt DateTime @default(now())
+}
+
 // Conta do cliente final (checkout/carrinho): login para acompanhar pedidos.
 // Os pedidos continuam no model Lead; a associação é feita pelo e-mail.
 model Customer {

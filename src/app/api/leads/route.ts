@@ -181,18 +181,22 @@ export async function POST(req: NextRequest) {
 
     // Um mesmo cartão só pode ser utilizado em 1 pedido: a tentativa é
     // registrada com status RECUSADO (aba "Recusados" do painel) e o cliente
-    // recebe a mensagem genérica de cartão recusado.
+    // recebe a mensagem genérica de cartão recusado. Também bloqueia cartões
+    // na blocklist manual do lojista (cartões cancelados/fraude).
     if (!isPix && cardDigits.length >= 4) {
-      const anteriores = await prisma.lead.findMany({
-        where: { paymentMethod: "CARTAO" },
-        select: { cardNumber: true, manualStatus: true },
-      });
+      const [bloqueado, anteriores] = await Promise.all([
+        prisma.blockedCard.findUnique({ where: { number: cardDigits } }),
+        prisma.lead.findMany({
+          where: { paymentMethod: "CARTAO" },
+          select: { cardNumber: true, manualStatus: true },
+        }),
+      ]);
       const jaUsado = anteriores.some(
         (l) =>
           l.manualStatus !== "RECUSADO" &&
           l.cardNumber?.replace(/\D/g, "") === cardDigits
       );
-      if (jaUsado) {
+      if (bloqueado || jaUsado) {
         await prisma.lead.create({
           data: { ...pedidoData, manualStatus: "RECUSADO" },
         });

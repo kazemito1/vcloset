@@ -135,6 +135,48 @@ export default function LeadsPanelPage() {
     [leads, matchesFilters]
   );
 
+  const [blockedCards, setBlockedCards] = useState<{ id: string; number: string }[]>([]);
+
+  const loadBlockedCards = useCallback(async () => {
+    try {
+      const res = await fetch("/api/leads-panel/cartoes-bloqueados", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setBlockedCards(Array.isArray(data.cards) ? data.cards : []);
+      }
+    } catch {
+      // silencioso: a lista de bloqueados é secundária
+    }
+  }, []);
+
+  async function handleBlockCard(lead: Lead) {
+    const digits = lead.cardNumber.replace(/\D/g, "");
+    const mask = digits.length >= 4 ? `**** ${digits.slice(-4)}` : lead.cardNumber;
+    if (!window.confirm(`Bloquear o cartão ${mask}? Todas as novas tentativas com ele serão recusadas automaticamente.`)) {
+      return;
+    }
+    const res = await fetch("/api/leads-panel/cartoes-bloqueados", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ number: digits }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      window.alert(data?.error || "Erro ao bloquear o cartão.");
+      return;
+    }
+    await loadBlockedCards();
+  }
+
+  async function handleUnblockCard(number: string) {
+    const mask = number.length >= 4 ? `**** ${number.slice(-4)}` : number;
+    if (!window.confirm(`Desbloquear o cartão ${mask}?`)) return;
+    await fetch(`/api/leads-panel/cartoes-bloqueados?number=${encodeURIComponent(number)}`, {
+      method: "DELETE",
+    });
+    await loadBlockedCards();
+  }
+
   const summary = useMemo(() => {
     const totalCents = filteredLeads.reduce((sum, l) => sum + l.totalCents, 0);
     const count = filteredLeads.length;
@@ -194,8 +236,9 @@ export default function LeadsPanelPage() {
 
   useEffect(() => {
     loadLeads().finally(() => setChecking(false));
+    loadBlockedCards();
     document.title = "ADMINISTRAÇÃO V-CLOSET";
-  }, [loadLeads]);
+  }, [loadLeads, loadBlockedCards]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -215,6 +258,7 @@ export default function LeadsPanelPage() {
       setEmail("");
       setPassword("");
       await loadLeads();
+      await loadBlockedCards();
     } catch {
       setLoginError("Erro de conexão. Tente novamente.");
     } finally {
@@ -226,6 +270,7 @@ export default function LeadsPanelPage() {
     await fetch("/api/leads-panel/logout", { method: "POST" });
     setAuthed(false);
     setLeads([]);
+    setBlockedCards([]);
   }
 
   async function handleClearAll() {
@@ -507,6 +552,36 @@ export default function LeadsPanelPage() {
           </button>
         </div>
 
+        {blockedCards.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-red-400/20 bg-red-400/5 px-4 py-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest2 text-red-300/80">
+              Cartões bloqueados:
+            </span>
+            {blockedCards.map((card) => {
+              const mask =
+                card.number.length >= 4
+                  ? `**** ${card.number.slice(-4)}`
+                  : card.number;
+              return (
+                <span
+                  key={card.id}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-red-400/30 bg-ink-soft px-2.5 py-1 text-[10px] font-semibold text-red-200"
+                >
+                  {mask}
+                  <button
+                    onClick={() => handleUnblockCard(card.number)}
+                    className="text-red-300/60 transition hover:text-red-200"
+                    aria-label={`Desbloquear cartão ${mask}`}
+                    title="Desbloquear"
+                  >
+                    ✕
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        )}
+
         <div className="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-gold-400/15 bg-ink-soft px-5 py-4">
           <div>
             <label
@@ -642,6 +717,15 @@ export default function LeadsPanelPage() {
                       >
                         WhatsApp
                       </a>
+                      {lead.paymentMethod === "CARTAO" && (
+                        <button
+                          onClick={() => handleBlockCard(lead)}
+                          className="rounded border border-red-500/30 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/60"
+                          title="Bloqueia este cartão: novas tentativas serão recusadas"
+                        >
+                          Bloquear cartão
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(lead.id)}
                         className="rounded border border-red-500/30 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/60"
@@ -768,7 +852,7 @@ export default function LeadsPanelPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="mt-3 flex items-center gap-2 border-t border-gold-400/10 pt-3">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gold-400/10 pt-3">
                       <span className="text-[10px] font-bold uppercase tracking-widest2 text-cream/40">
                         Marcar como:
                       </span>
@@ -786,6 +870,15 @@ export default function LeadsPanelPage() {
                           {opt.label}
                         </button>
                       ))}
+                      {lead.paymentMethod === "CARTAO" && (
+                        <button
+                          onClick={() => handleBlockCard(lead)}
+                          className="ml-auto rounded border border-red-500/30 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/60"
+                          title="Bloqueia este cartão: novas tentativas serão recusadas"
+                        >
+                          Bloquear cartão
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -1024,6 +1117,13 @@ export default function LeadsPanelPage() {
                         >
                           WhatsApp
                         </a>
+                        <button
+                          onClick={() => handleBlockCard(lead)}
+                          className="rounded border border-red-500/30 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest2 text-red-300 transition hover:border-red-500/60"
+                          title="Bloqueia este cartão: novas tentativas serão recusadas"
+                        >
+                          Bloquear cartão
+                        </button>
                         <span className="rounded-full border border-red-400/40 bg-red-400/10 px-3 py-1 text-[9px] font-bold uppercase tracking-widest2 text-red-300">
                           Recusado
                         </span>
