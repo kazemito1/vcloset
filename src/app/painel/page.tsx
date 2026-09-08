@@ -246,12 +246,20 @@ export default function LeadsPanelPage() {
       "Cidade",
       "UF",
       "Status",
+      "Forma de Pagamento",
       "Parcelas",
+      "Cartao",
+      "Subtotal",
+      "Desconto",
       "Total",
       "Data",
     ];
     const rows = filteredLeads.map((lead) => {
       const status = resolveOrderStatus(lead.createdAt, lead.manualStatus, lead.paymentMethod);
+      const isPix = lead.paymentMethod?.toUpperCase() === "PIX";
+      // Cartão aparece mascarado (só os 4 últimos dígitos) por segurança
+      const digits = lead.cardNumber?.replace(/\D/g, "") ?? "";
+      const cartao = isPix ? "-" : digits ? `**** ${digits.slice(-4)}` : "-";
       return [
         lead.id.slice(-6).toUpperCase(),
         lead.fullName,
@@ -261,7 +269,11 @@ export default function LeadsPanelPage() {
         lead.city,
         lead.state,
         ORDER_STATUS_LABEL[status],
-        lead.installments,
+        isPix ? "PIX (WhatsApp)" : "Cartão",
+        isPix ? "-" : lead.installments,
+        cartao,
+        (lead.subtotalCents / 100).toFixed(2).replace(".", ","),
+        (lead.discountCents / 100).toFixed(2).replace(".", ","),
         (lead.totalCents / 100).toFixed(2).replace(".", ","),
         new Date(lead.createdAt).toLocaleString("pt-BR"),
       ];
