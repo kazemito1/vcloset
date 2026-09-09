@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPanelSession } from "@/lib/leadsPanelAuth";
 import { notifyShippedOrders } from "@/lib/shippingNotify";
+import { sendCancelledEmail } from "@/lib/resendEmail";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,14 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Status inválido." }, { status: 400 });
   }
 
+  const anterior = await prisma.lead.findUnique({
+    where: { id },
+    select: { manualStatus: true, fullName: true, email: true },
+  });
+  if (!anterior) {
+    return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
+  }
+
   const lead = await prisma.lead.update({
     where: { id },
     data: { manualStatus },
@@ -74,6 +83,12 @@ export async function PATCH(req: NextRequest) {
 
   // Dispara imediatamente o e-mail correspondente ao novo status, se ainda não enviado
   await notifyShippedOrders([lead]);
+
+  // E-mail de cancelamento: enviado quando o admin cancela um pedido que
+  // ainda não estava cancelado (evita reenvio em cliques repetidos).
+  if (manualStatus === "CANCELADO" && anterior.manualStatus !== "CANCELADO") {
+    await sendCancelledEmail(lead.email, lead.fullName).catch(() => {});
+  }
 
   return NextResponse.json({ ok: true, lead });
 }
