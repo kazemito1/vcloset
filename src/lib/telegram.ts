@@ -188,7 +188,9 @@ function parseUserAgent(ua: string) {
   return { device, browser, os };
 }
 
-export async function notifyNewVisit(info: {
+// Notifica quando o cliente entra na página de checkout (uma vez por sessão
+// no client — o disparo vem de /api/telegram/checkout).
+export async function notifyCheckoutEntry(info: {
   ip: string;
   path: string;
   referer: string;
@@ -199,13 +201,11 @@ export async function notifyNewVisit(info: {
 }): Promise<void> {
   const { device, browser, os } = parseUserAgent(info.userAgent);
 
-  // Disparada apenas para leads novos (dedup por IP feita na rota).
   const lines = [
-    "👀 <b>Novo lead no site</b>",
+    "🛒 <b>Cliente entrou no checkout</b>",
     "",
     `<b>Horário:</b> ${formatVisitTime()}`,
     `<b>IP:</b> ${escapeHtml(info.ip)}`,
-    `<b>Página:</b> ${escapeHtml(info.path || "/")}`,
     `<b>Origem:</b> ${escapeHtml(info.referer || "direta")}`,
     `<b>Dispositivo:</b> ${escapeHtml(device)}`,
     `<b>Navegador:</b> ${escapeHtml(browser)}`,

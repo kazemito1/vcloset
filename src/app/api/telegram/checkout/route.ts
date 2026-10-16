@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { notifyNewVisit } from "@/lib/telegram";
+import { notifyCheckoutEntry } from "@/lib/telegram";
 
 export const dynamic = "force-dynamic";
 
@@ -19,28 +18,13 @@ function normalizeIp(raw: string): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
-    // Deduplicação por IP: o mesmo visitante notifica "novo lead" apenas
-    // uma vez, independente de quantas vezes reabrir o site.
     const ip = normalizeIp(
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || ""
     );
 
-    if (ip) {
-      try {
-        await prisma.notifiedVisit.create({ data: { ip } });
-      } catch {
-        // IP já notificado (unique) — visita de lead conhecido, ignora.
-        return NextResponse.json({ ok: true });
-      }
-    } else if (body.first !== true) {
-      // Sem IP identificável: só notifica se for o primeiro load da sessão.
-      return NextResponse.json({ ok: true });
-    }
-
-    await notifyNewVisit({
+    await notifyCheckoutEntry({
       ip: ip || "desconhecido",
-      path: typeof body.path === "string" ? body.path : "/",
+      path: typeof body.path === "string" ? body.path : "/checkout",
       referer: typeof body.referer === "string" ? body.referer : "",
       userAgent: typeof body.userAgent === "string" ? body.userAgent : "",
       lang: typeof body.lang === "string" ? body.lang : "",

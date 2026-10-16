@@ -142,6 +142,31 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Telegram: avisa o lojista quando o cliente entra no checkout
+  // (uma vez por sessão do navegador, para não spammar).
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("vcloset-checkout-notified")) return;
+      sessionStorage.setItem("vcloset-checkout-notified", "1");
+    } catch {
+      // sessionStorage indisponível: segue com o ping mesmo assim
+    }
+
+    fetch("/api/telegram/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        path: "/checkout",
+        referer: document.referrer || "",
+        userAgent: navigator.userAgent || "",
+        lang: navigator.language || "",
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+        screen: `${window.screen.width}x${window.screen.height}`,
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  }, []);
+
   async function carregarFrete(cepDigits: string) {
     setFetchingFrete(true);
     setFreteErro(null);
