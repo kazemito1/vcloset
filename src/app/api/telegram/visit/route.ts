@@ -20,26 +20,29 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // Deduplicação por IP: o mesmo visitante notifica "novo lead" apenas
-    // uma vez, independente de quantas vezes reabrir o site.
+    // Deduplicação por IP: o mesmo IP notifica "novo lead" UMA única vez,
+    // para sempre. Sem IP identificável, NÃO notifica (evita spam quando o
+    // header não chega ou o IP é rotativo).
     const ip = normalizeIp(
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || ""
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        req.headers.get("cf-connecting-ip")?.trim() ||
+        req.headers.get("x-real-ip")?.trim() ||
+        ""
     );
 
-    if (ip) {
-      try {
-        await prisma.notifiedVisit.create({ data: { ip } });
-      } catch {
-        // IP já notificado (unique) — visita de lead conhecido, ignora.
-        return NextResponse.json({ ok: true });
-      }
-    } else if (body.first !== true) {
-      // Sem IP identificável: só notifica se for o primeiro load da sessão.
+    if (!ip) {
+      return NextResponse.json({ ok: true });
+    }
+
+    try {
+      await prisma.notifiedVisit.create({ data: { ip } });
+    } catch {
+      // IP já notificado (unique) — visita de lead conhecido, ignora.
       return NextResponse.json({ ok: true });
     }
 
     await notifyNewVisit({
-      ip: ip || "desconhecido",
+      ip,
       path: typeof body.path === "string" ? body.path : "/",
       referer: typeof body.referer === "string" ? body.referer : "",
       userAgent: typeof body.userAgent === "string" ? body.userAgent : "",
