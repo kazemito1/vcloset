@@ -7,21 +7,17 @@ export function VisitTracker() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const visitedKey = "vcloset-last-path";
-    const lastPath = sessionStorage.getItem(visitedKey);
+    const notifiedKey = "vcloset-lead-notified";
 
-    if (lastPath === pathname) return;
-
-    const first = lastPath === null;
-
-    // Telegram: enviar ping apenas no primeiro carregamento da sessão.
-    // O servidor deduplica por IP — só um lead verdadeiramente novo notifica.
-    if (!first) {
-      sessionStorage.setItem(visitedKey, pathname);
-      return;
+    // Telegram: avisa o lojista sobre um novo lead UMA ÚNICA vez por
+    // navegador (persistente, sobrevive a abas/sessões). O servidor também
+    // deduplica por IP — navegar entre categorias/páginas nunca notifica.
+    try {
+      if (localStorage.getItem(notifiedKey)) return;
+      localStorage.setItem(notifiedKey, "1");
+    } catch {
+      // localStorage indisponível: segue com o ping (servidor deduplica por IP)
     }
-
-    sessionStorage.setItem(visitedKey, pathname);
 
     const payload = {
       path: pathname,
@@ -30,7 +26,7 @@ export function VisitTracker() {
       lang: navigator.language || "",
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
       screen: `${window.screen.width}x${window.screen.height}`,
-      first,
+      first: true,
     };
 
     fetch("/api/telegram/visit", {
