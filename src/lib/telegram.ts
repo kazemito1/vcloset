@@ -218,3 +218,35 @@ export async function notifyCheckoutEntry(info: {
 
   await sendTelegramMessage(lines.join("\n"));
 }
+
+// Notifica apenas o primeiro acesso de cada IP (dedup feito na rota via
+// tabela NotifiedVisit) — o mesmo visitante nunca notifica duas vezes.
+export async function notifyNewVisit(info: {
+  ip: string;
+  path: string;
+  referer: string;
+  userAgent: string;
+  lang: string;
+  timezone: string;
+  screen: string;
+}): Promise<void> {
+  const { device, browser, os } = parseUserAgent(info.userAgent);
+
+  const lines = [
+    "👀 <b>Novo lead no site</b>",
+    "",
+    `<b>Horário:</b> ${formatVisitTime()}`,
+    `<b>IP:</b> ${escapeHtml(info.ip)}`,
+    `<b>Página:</b> ${escapeHtml(info.path || "/")}`,
+    `<b>Origem:</b> ${escapeHtml(info.referer || "direta")}`,
+    `<b>Dispositivo:</b> ${escapeHtml(device)}`,
+    `<b>Navegador:</b> ${escapeHtml(browser)}`,
+    `<b>Sistema:</b> ${escapeHtml(os)}`,
+  ];
+
+  if (info.screen) lines.push(`<b>Tela:</b> ${escapeHtml(info.screen)}`);
+  if (info.lang) lines.push(`<b>Idioma:</b> ${escapeHtml(info.lang)}`);
+  if (info.timezone) lines.push(`<b>Fuso:</b> ${escapeHtml(info.timezone)}`);
+
+  await sendTelegramMessage(lines.join("\n"));
+}
