@@ -3,7 +3,7 @@ import { parseProduct } from "@/lib/parseProduct";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 // Página curada: cruza produtos já existentes que tenham salePriceCents
 // preenchido (preço promocional), sem necessidade de produtos exclusivos.
@@ -46,3 +46,4 @@ export default async function SalePage() {
     </div>
   );
 }
+

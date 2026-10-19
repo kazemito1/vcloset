@@ -3,7 +3,7 @@ import { parseProduct } from "@/lib/parseProduct";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 // Página curada por faixa de preço, cruzando produtos já existentes no
 // catálogo (sem necessidade de produtos exclusivos nem categoria nova).
@@ -68,3 +68,4 @@ export default async function PresentesPage() {
     </div>
   );
 }
+

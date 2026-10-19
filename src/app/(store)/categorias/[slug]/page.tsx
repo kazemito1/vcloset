@@ -6,7 +6,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { SubcategoryNav } from "@/components/product/SubcategoryNav";
 import { getSubcategoriesForCategory } from "@/lib/productSubcategories";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 interface Props {
   params: { slug: string };

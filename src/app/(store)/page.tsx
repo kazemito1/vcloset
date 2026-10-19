@@ -8,7 +8,7 @@ import { STORE_NAME } from "@/lib/constants";
 import { getStoreSettings } from "@/lib/storeSettings";
 import { CategoryLink } from "@/components/store/CategoryTransition";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 export default async function HomePage() {
   const [featuredProducts, categories, settings] = await Promise.all([
@@ -140,3 +140,4 @@ export default async function HomePage() {
     </div>
   );
 }
+

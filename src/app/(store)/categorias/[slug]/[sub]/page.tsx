@@ -9,7 +9,7 @@ import {
   resolveSubcategorySlug,
 } from "@/lib/productSubcategories";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 interface Props {
   params: { slug: string; sub: string };

@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveAppliedCode } from "@/lib/coupons";
+import { clientIpFromHeaders, rateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
+  // Máx. 10 validações por IP a cada minuto (anti-força-bruta de códigos).
+  const rl = rateLimit(`cupons:${clientIpFromHeaders(req.headers)}`, 10, 60 * 1000);
+  if (!rl.ok) return tooManyRequests(rl.retryAfterSec);
+
   const body = await req.json().catch(() => ({}));
   const code = typeof body.code === "string" ? body.code : "";
   const subtotalCents = typeof body.subtotalCents === "number" ? body.subtotalCents : 0;

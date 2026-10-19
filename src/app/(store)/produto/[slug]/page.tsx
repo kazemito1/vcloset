@@ -8,7 +8,7 @@ import { ProductRating } from "@/components/product/ProductRating";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 interface Props {
   params: { slug: string };

@@ -3,7 +3,7 @@ import { parseProduct } from "@/lib/parseProduct";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 // Página curada: cruza produtos já existentes marcados com
 // targetGender = "masculino" (alianças, relógios, etc.), sem duplicar
@@ -48,3 +48,4 @@ export default async function MasculinoPage() {
     </div>
   );
 }
+

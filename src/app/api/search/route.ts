@@ -1,10 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { parseProduct } from "@/lib/parseProduct";
 import { NextResponse } from "next/server";
+import { clientIpFromHeaders, rateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 export const revalidate = 0;
 
 export async function GET(req: Request) {
+  // Máx. 30 buscas por IP a cada minuto (anti-abuso).
+  const rl = rateLimit(`busca:${clientIpFromHeaders(req.headers)}`, 30, 60 * 1000);
+  if (!rl.ok) return tooManyRequests(rl.retryAfterSec);
+
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();
 

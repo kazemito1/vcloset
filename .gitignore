@@ -19,3 +19,6 @@ prisma/dev.db-journal
 
 .vscode/
 .idea/
+
+# Backups locais do banco
+backups/

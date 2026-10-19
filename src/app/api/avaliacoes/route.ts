@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { notifyNewReview } from "@/lib/telegram";
+import { clientIpFromHeaders, rateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 // Avaliações públicas da loja. GET lista as aprovadas de um produto;
 // POST cria uma nova avaliação que fica pendente até aprovação do lojista.
@@ -25,6 +27,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Máx. 3 avaliações por IP a cada 10 minutos (anti-spam).
+  const rl = rateLimit(`avaliacoes:${clientIpFromHeaders(req.headers)}`, 3, 10 * 60 * 1000);
+  if (!rl.ok) return tooManyRequests(rl.retryAfterSec);
+
   const body = await req.json().catch(() => ({}));
 
   const productId = typeof body.productId === "string" ? body.productId : "";
@@ -54,6 +60,14 @@ export async function POST(req: NextRequest) {
   const review = await prisma.review.create({
     data: { productId, name, rating, comment },
   });
+
+  // Aviso no Telegram sem bloquear/quebrar a resposta do POST.
+  notifyNewReview({
+    productName: product.name,
+    name,
+    rating,
+    comment,
+  }).catch(() => {});
 
   return NextResponse.json({ ok: true, id: review.id }, { status: 201 });
 }

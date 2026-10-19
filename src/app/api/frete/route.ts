@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { clientIpFromHeaders, rateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,10 @@ function consultar(cepDigits: string): { pac: FreightOption; sedex: FreightOptio
 }
 
 export async function GET(req: NextRequest) {
+  // Máx. 30 consultas por IP a cada minuto (anti-abuso).
+  const rl = rateLimit(`frete:${clientIpFromHeaders(req.headers)}`, 30, 60 * 1000);
+  if (!rl.ok) return tooManyRequests(rl.retryAfterSec);
+
   const { searchParams } = new URL(req.url);
   const cep = (searchParams.get("cep") ?? "").replace(/\D/g, "").slice(0, 8);
 
