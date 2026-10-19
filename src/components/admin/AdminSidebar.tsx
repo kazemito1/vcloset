@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { label: "Pedidos", href: "/admin/pedidos", superAdminOnly: false },
   { label: "Leads do Checkout", href: "/admin/leads", superAdminOnly: false },
   { label: "Cupons", href: "/admin/cupons", superAdminOnly: false },
+  { label: "Avaliações", href: "/admin/avaliacoes", superAdminOnly: false },
   { label: "Indicações", href: "/admin/indicacoes", superAdminOnly: false },
   { label: "Relatórios", href: "/admin/relatorios", superAdminOnly: false },
   { label: "Financeiro", href: "/admin/financeiro", superAdminOnly: true },

@@ -5,6 +5,7 @@ import { getProductVideo } from "@/lib/productVideos";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { AddToCartForm } from "@/components/product/AddToCartForm";
 import { ProductRating } from "@/components/product/ProductRating";
+import { ProductReviews } from "@/components/product/ProductReviews";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
 export const revalidate = 0;
@@ -16,7 +17,11 @@ interface Props {
 export default async function ProductPage({ params }: Props) {
   const productData = await prisma.product.findUnique({
     where: { slug: params.slug },
-    include: { category: true, variants: true },
+    include: {
+      category: true,
+      variants: true,
+      reviews: { where: { approved: true }, select: { rating: true } },
+    },
   });
 
   if (!productData) {
@@ -24,6 +29,11 @@ export default async function ProductPage({ params }: Props) {
   }
 
   const product = parseProduct(productData!);
+  const reviewCount = productData!.reviews.length;
+  const reviewAvg =
+    reviewCount > 0
+      ? productData!.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+      : 0;
 
   return (
     <div className="container-page py-12 md:py-16">
@@ -52,14 +62,18 @@ export default async function ProductPage({ params }: Props) {
           <h1 className="mt-2 font-serif text-3xl md:text-4xl text-ink">
             {product.name}
           </h1>
-          <div className="mt-3">
-            <ProductRating />
-          </div>
+          {reviewCount > 0 && (
+            <div className="mt-3">
+              <ProductRating rating={reviewAvg} reviewCount={reviewCount} />
+            </div>
+          )}
           <p className="mt-4 text-ink/70 leading-relaxed">{product.description}</p>
 
           <AddToCartForm product={product} />
         </div>
       </div>
+
+      <ProductReviews productId={product.id} />
     </div>
   );
 }
